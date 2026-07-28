@@ -27,28 +27,52 @@ const projectRoot = resolve(fileURLToPath(new URL(".", import.meta.url)));
 const distDir = join(projectRoot, "dist");
 const indexHtml = join(distDir, "index.html");
 const port = Number(process.env.PORT || 3000);
+const host = process.env.HOST || "0.0.0.0";
+
+// Never let an unexpected throw take the process down: Hostinger reports a
+// dead Node process as 503 for every asset. Log and keep serving instead.
+process.on("uncaughtException", (err) => console.error("Uncaught exception:", err));
+process.on("unhandledRejection", (err) => console.error("Unhandled rejection:", err));
 
 // Resolve the public origin from the actual request, never from a constant.
+// Every header read is defensive: a missing/garbled Host must not throw.
 function originFromRequest(req) {
-  const forwardedHost = (req.headers["x-forwarded-host"] || "").toString().split(",")[0].trim();
-  const host = forwardedHost || (req.headers.host || "").toString().trim();
-  if (!host) return "";
-  const forwardedProto = (req.headers["x-forwarded-proto"] || "").toString().split(",")[0].trim();
-  const proto = forwardedProto || (req.socket?.encrypted ? "https" : "http");
-  return `${proto}://${host}`;
+  try {
+    const headers = (req && req.headers) || {};
+    const forwardedHost = String(headers["x-forwarded-host"] || "").split(",")[0].trim();
+    const hostHeader = forwardedHost || String(headers.host || "").trim();
+    if (!hostHeader || /[^a-zA-Z0-9.\-:[\]]/.test(hostHeader)) return "";
+    const forwardedProto = String(headers["x-forwarded-proto"] || "").split(",")[0].trim();
+    const proto = /^https?$/.test(forwardedProto)
+      ? forwardedProto
+      : req && req.socket && req.socket.encrypted
+        ? "https"
+        : "http";
+    return `${proto}://${hostHeader}`;
+  } catch {
+    return "";
+  }
 }
 
 // Inject canonical + og:url for the domain that actually served the request.
+// If anything at all goes wrong, fall back to the untouched HTML.
 function renderIndexHtml(req) {
   const html = readFileSync(indexHtml, "utf8");
-  const origin = originFromRequest(req);
-  if (!origin) return html;
-  const path = (req.url || "/").split("?")[0];
-  const url = `${origin}${path}`;
-  const tags =
-    `<link rel="canonical" href="${url}">` +
-    `<meta property="og:url" content="${url}">`;
-  return html.replace("</head>", `    ${tags}\n  </head>`);
+  try {
+    const origin = originFromRequest(req);
+    if (!origin) return html;
+    const path = ((req && req.url) || "/").split("?")[0].replace(/"/g, "%22");
+    const url = `${origin}${path}`;
+    const tags =
+      `<link rel="canonical" href="${url}">` +
+      `<meta property="og:url" content="${url}">`;
+    return html.includes("</head>")
+      ? html.replace("</head>", `    ${tags}\n  </head>`)
+      : html;
+  } catch (err) {
+    console.error("Canonical injection skipped:", err);
+    return html;
+  }
 }
 
 const mime = {
@@ -89,15 +113,23 @@ function sendFile(res, filePath, { cache } = {}) {
 }
 
 function sendIndex(res, req) {
-  const body = renderIndexHtml(req);
-  res.writeHead(200, {
-    "content-type": "text/html; charset=utf-8",
-    "cache-control": "no-cache",
-  });
-  res.end(body);
+  try {
+    const body = renderIndexHtml(req);
+    res.writeHead(200, {
+      "content-type": "text/html; charset=utf-8",
+      "cache-control": "no-cache",
+    });
+    res.end(body);
+  } catch (err) {
+    console.error("Failed to serve index.html:", err);
+    if (!res.headersSent) {
+      res.writeHead(500, { "content-type": "text/plain; charset=utf-8" });
+    }
+    res.end("Build output missing. Run `npm run build`, then restart the Node.js app.");
+  }
 }
 
-createServer(async (req, res) => {
+const server = createServer(async (req, res) => {
   try {
     const urlPath = (req.url || "/").split("?")[0];
 
@@ -134,6 +166,12 @@ createServer(async (req, res) => {
     }
     res.end("Internal Server Error");
   }
-}).listen(port, () => {
-  console.log(`Node server listening on port ${port}`);
+});
+
+server.on("error", (err) => {
+  console.error("HTTP server error:", err);
+});
+
+server.listen(port, host, () => {
+  console.log(`Node server listening on ${host}:${port}`);
 });
