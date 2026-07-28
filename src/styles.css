@@ -64,37 +64,48 @@
 :root {
   --radius: 0.625rem;
   --background: oklch(1 0 0);
-  --foreground: oklch(0.129 0.042 264.695);
-  --card: oklch(1 0 0);
-  --card-foreground: oklch(0.129 0.042 264.695);
+  --foreground: oklch(0.15 0.01 60);
+  --card: oklch(0.99 0.005 80);
+  --card-foreground: oklch(0.15 0.01 60);
   --popover: oklch(1 0 0);
-  --popover-foreground: oklch(0.129 0.042 264.695);
-  --primary: oklch(0.208 0.042 265.755);
-  --primary-foreground: oklch(0.984 0.003 247.858);
-  --secondary: oklch(0.968 0.007 247.896);
-  --secondary-foreground: oklch(0.208 0.042 265.755);
-  --muted: oklch(0.968 0.007 247.896);
-  --muted-foreground: oklch(0.554 0.046 257.417);
-  --accent: oklch(0.968 0.007 247.896);
-  --accent-foreground: oklch(0.208 0.042 265.755);
+  --popover-foreground: oklch(0.15 0.01 60);
+  --primary: oklch(0.18 0.01 60);
+  --primary-foreground: oklch(1 0 0);
+  --secondary: oklch(0.96 0.01 80);
+  --secondary-foreground: oklch(0.15 0.01 60);
+  --muted: oklch(0.95 0.005 80);
+  --muted-foreground: oklch(0.45 0.01 60);
+  --accent: oklch(0.55 0.15 55);
+  --accent-foreground: oklch(1 0 0);
   --destructive: oklch(0.577 0.245 27.325);
   --destructive-foreground: oklch(0.984 0.003 247.858);
-  --border: oklch(0.929 0.013 255.508);
-  --input: oklch(0.929 0.013 255.508);
-  --ring: oklch(0.704 0.04 256.788);
-  --chart-1: oklch(0.646 0.222 41.116);
-  --chart-2: oklch(0.6 0.118 184.704);
-  --chart-3: oklch(0.398 0.07 227.392);
+  --border: oklch(0.9 0.005 80);
+  --input: oklch(0.92 0.005 80);
+  --ring: oklch(0.55 0.15 55);
+
+  --neon-green: oklch(0.72 0.22 145);
+  --whatsapp: oklch(0.65 0.2 145);
+  --sand-warm: oklch(0.78 0.09 65);
+  --sand-deep: oklch(0.45 0.1 55);
+
+  --gradient-hero: radial-gradient(ellipse at 70% 50%, oklch(0.85 0.08 70) 0%, oklch(0.65 0.12 55) 45%, oklch(0.35 0.08 50) 100%);
+  --gradient-card: linear-gradient(135deg, oklch(0.99 0.005 80) 0%, oklch(0.96 0.01 70) 100%);
+  --shadow-glow: 0 10px 40px -10px oklch(0.45 0.1 55 / 0.4);
+  --shadow-product: 0 30px 60px -20px oklch(0.2 0.02 60 / 0.25);
+
+  --chart-1: oklch(0.55 0.25 300);
+  --chart-2: oklch(0.7 0.18 150);
+  --chart-3: oklch(0.6 0.22 270);
   --chart-4: oklch(0.828 0.189 84.429);
   --chart-5: oklch(0.769 0.188 70.08);
-  --sidebar: oklch(0.984 0.003 247.858);
-  --sidebar-foreground: oklch(0.129 0.042 264.695);
-  --sidebar-primary: oklch(0.208 0.042 265.755);
-  --sidebar-primary-foreground: oklch(0.984 0.003 247.858);
-  --sidebar-accent: oklch(0.968 0.007 247.896);
-  --sidebar-accent-foreground: oklch(0.208 0.042 265.755);
-  --sidebar-border: oklch(0.929 0.013 255.508);
-  --sidebar-ring: oklch(0.704 0.04 256.788);
+  --sidebar: oklch(0.14 0.04 285);
+  --sidebar-foreground: oklch(0.98 0.01 280);
+  --sidebar-primary: oklch(0.55 0.25 300);
+  --sidebar-primary-foreground: oklch(0.99 0 0);
+  --sidebar-accent: oklch(0.2 0.05 290);
+  --sidebar-accent-foreground: oklch(0.98 0.01 280);
+  --sidebar-border: oklch(0.25 0.05 290);
+  --sidebar-ring: oklch(0.55 0.25 300);
 }
 
 .dark {
@@ -137,8 +148,114 @@
     border-color: var(--color-border);
   }
 
+  html {
+    font-family: 'Inter', system-ui, sans-serif;
+  }
+
   body {
     background-color: var(--color-background);
     color: var(--color-foreground);
+    font-feature-settings: "ss01", "cv11";
   }
 }
+
+@layer utilities {
+  .bg-hero-gradient {
+    background: var(--gradient-hero);
+  }
+  .bg-card-gradient {
+    background: var(--gradient-card);
+  }
+  .shadow-glow {
+    box-shadow: var(--shadow-glow);
+  }
+  .shadow-product {
+    box-shadow: var(--shadow-product);
+  }
+  .text-neon-green {
+    color: var(--neon-green);
+  }
+  .bg-neon-green {
+    background-color: var(--neon-green);
+  }
+  .bg-whatsapp {
+    background-color: var(--whatsapp);
+  }
+  .font-display {
+    font-family: 'Montserrat', 'Inter', sans-serif;
+    letter-spacing: -0.03em;
+  }
+  .logo-orange {
+    filter: brightness(0) saturate(100%) invert(52%) sepia(70%) saturate(700%) hue-rotate(5deg) brightness(88%) contrast(98%);
+  }
+}
+
+@keyframes marquee {
+  0% { transform: translateX(0); }
+  100% { transform: translateX(-50%); }
+}
+.animate-marquee {
+  animation: marquee 25s linear infinite;
+}
+
+@keyframes float {
+  0%, 100% { transform: translateY(0px); }
+  50% { transform: translateY(-20px); }
+}
+.animate-float {
+  animation: float 6s ease-in-out infinite;
+}
+
+@keyframes pulse-ring {
+  0% { box-shadow: 0 0 0 0 oklch(0.7 0.18 150 / 0.7); }
+  70% { box-shadow: 0 0 0 20px oklch(0.7 0.18 150 / 0); }
+  100% { box-shadow: 0 0 0 0 oklch(0.7 0.18 150 / 0); }
+}
+.animate-pulse-ring {
+  animation: pulse-ring 2s infinite;
+}
+
+/* Attention wiggle for primary CTA — smooth shake every few seconds */
+@keyframes attention-wiggle {
+  0%, 88%, 100% { transform: translateX(0) rotate(0); }
+  90% { transform: translateX(-3px) rotate(-1.2deg); }
+  92% { transform: translateX(3px) rotate(1.2deg); }
+  94% { transform: translateX(-3px) rotate(-1deg); }
+  96% { transform: translateX(3px) rotate(1deg); }
+  98% { transform: translateX(0) rotate(0); }
+}
+.animate-attention {
+  animation: attention-wiggle 3.5s ease-in-out infinite;
+  transform-origin: center;
+}
+.animate-attention:hover { animation-play-state: paused; }
+
+/* Category icon: soft glow + gentle float on hover */
+@keyframes cat-float {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-4px); }
+}
+.category-icon {
+  transition: transform 0.35s ease, box-shadow 0.35s ease, border-color 0.35s ease;
+  will-change: transform;
+}
+.category-icon:hover {
+  transform: translateY(-4px) scale(1.06);
+  box-shadow: 0 18px 40px -18px oklch(0.55 0.15 55 / 0.55),
+              0 0 0 4px oklch(0.55 0.15 55 / 0.08);
+  animation: cat-float 2.4s ease-in-out infinite;
+}
+.category-icon::before {
+  content: "";
+  position: absolute;
+  inset: -2px;
+  border-radius: 9999px;
+  background: radial-gradient(circle at 30% 30%, oklch(0.85 0.12 65 / 0.35), transparent 60%);
+  opacity: 0;
+  transition: opacity 0.35s ease;
+  pointer-events: none;
+}
+.category-icon:hover::before { opacity: 1; }
+
+/* Smoother button transitions site-wide */
+button, a { transition-property: transform, color, background-color, border-color, box-shadow, opacity; transition-duration: 200ms; transition-timing-function: cubic-bezier(0.2, 0.8, 0.2, 1); }

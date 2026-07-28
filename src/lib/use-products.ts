@@ -1,0 +1,282 @@
+import { useEffect, useState } from "react";
+import { supabase } from "@/integrations/supabase/client";
+import { fallbackImageBySlug, placeholderImg, type Product } from "@/lib/products";
+
+type DbRow = {
+  slug: string;
+  name: string;
+  tagline: string;
+  price: string;
+  old_price: string | null;
+  image_url: string | null;
+  tag: string | null;
+  category: string;
+  description: string;
+  features: string[];
+  sort_order: number;
+  images?: string[] | null;
+  colors?: string[] | null;
+};
+
+function mapRow(r: DbRow): Product {
+  return {
+    slug: r.slug,
+    name: r.name,
+    tagline: r.tagline,
+    price: r.price,
+    oldPrice: r.old_price ?? undefined,
+    img: r.image_url || fallbackImageBySlug[r.slug] || placeholderImg,
+    tag: r.tag ?? undefined,
+    category: r.category,
+    description: r.description,
+    features: r.features ?? [],
+    images: r.images ?? [],
+    colors: r.colors ?? [],
+  };
+}
+
+export function useProducts() {
+  const [products, setProducts] = useState<Product[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    let active = true;
+    const load = async () => {
+      const { data, error } = await supabase
+        .from("products")
+        .select("slug,name,tagline,price,old_price,image_url,tag,category,description,features,sort_order,images,colors")
+        .order("sort_order", { ascending: true });
+      if (!active) return;
+      if (error) {
+        console.error("Failed to load products:", error);
+        setProducts([]);
+      } else {
+        setProducts((data as DbRow[]).map(mapRow));
+      }
+      setLoading(false);
+    };
+    load();
+
+    // Realtime: any change in products refreshes the list instantly
+    const channel = supabase
+      .channel("products-changes")
+      .on("postgres_changes", { event: "*", schema: "public", table: "products" }, () => load())
+      .subscribe();
+
+    return () => {
+      active = false;
+      supabase.removeChannel(channel);
+    };
+  }, []);
+
+  return { products, loading };
+}
+
+export function useProduct(slug: string) {
+  const [product, setProduct] = useState<Product | null>(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    let active = true;
+    const load = async () => {
+      const { data, error } = await supabase
+        .from("products")
+        .select("slug,name,tagline,price,old_price,image_url,tag,category,description,features,sort_order,images,colors")
+        .eq("slug", slug)
+        .maybeSingle();
+      if (!active) return;
+      if (error) console.error(error);
+      setProduct(data ? mapRow(data as DbRow) : null);
+      setLoading(false);
+    };
+    load();
+
+    const channel = supabase
+      .channel(`product-${slug}`)
+      .on("postgres_changes", { event: "*", schema: "public", table: "products", filter: `slug=eq.${slug}` }, () => load())
+      .subscribe();
+
+    return () => {
+      active = false;
+      supabase.removeChannel(channel);
+    };
+  }, [slug]);
+
+  return { product, loading };
+}
+
+export type Category = {
+  id: string;
+  slug: string;
+  label: string;
+  image_url: string | null;
+  link_slug: string;
+  sort_order: number;
+};
+
+export function useCategories() {
+  const [categories, setCategories] = useState<Category[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    let active = true;
+    const load = async () => {
+      const { data } = await supabase
+        .from("categories")
+        .select("id,slug,label,image_url,link_slug,sort_order")
+        .order("sort_order", { ascending: true });
+      if (!active) return;
+      setCategories((data as Category[]) ?? []);
+      setLoading(false);
+    };
+    load();
+    const ch = supabase
+      .channel("categories-changes")
+      .on("postgres_changes", { event: "*", schema: "public", table: "categories" }, () => load())
+      .subscribe();
+    return () => {
+      active = false;
+      supabase.removeChannel(ch);
+    };
+  }, []);
+
+  return { categories, loading };
+}
+
+export function useVisitorCount() {
+  const [count, setCount] = useState<number | null>(null);
+
+  useEffect(() => {
+    let active = true;
+    const load = async () => {
+      const { count: c } = await supabase
+        .from("visits")
+        .select("*", { count: "exact", head: true });
+      if (active) setCount(c ?? 0);
+    };
+    load();
+    const ch = supabase
+      .channel("visits-count")
+      .on("postgres_changes", { event: "INSERT", schema: "public", table: "visits" }, () => load())
+      .subscribe();
+    return () => {
+      active = false;
+      supabase.removeChannel(ch);
+    };
+  }, []);
+
+  return count;
+}
+
+let visitRecorded = false;
+export function recordVisit(path: string) {
+  if (typeof window === "undefined" || visitRecorded) return;
+  visitRecorded = true;
+  const key = "desicart.visit.session";
+  try {
+    if (sessionStorage.getItem(key)) return;
+    sessionStorage.setItem(key, "1");
+  } catch {
+    // ignore
+  }
+  // Best-effort IP-based geolocation via free public endpoint (no key).
+  // Fails silently — visit is still recorded without geo.
+  const geo: Promise<{ country: string | null; country_code: string | null; city: string | null }> = fetch(
+    "https://ipapi.co/json/",
+    { headers: { Accept: "application/json" } },
+  )
+    .then((r) => (r.ok ? r.json() : null))
+    .then((d: { country_name?: string; country_code?: string; city?: string } | null) => ({
+      country: d?.country_name ?? null,
+      country_code: d?.country_code ?? null,
+      city: d?.city ?? null,
+    }))
+    .catch(() => ({ country: null, country_code: null, city: null }));
+
+  geo.then(({ country, country_code, city }) => {
+    supabase
+      .from("visits")
+      .insert({ path, referrer: document.referrer || null, country, country_code, city })
+      .then(() => {})
+      .then(undefined, () => {});
+  });
+}
+
+export type CountryStat = { country: string; count: number };
+
+export function useTopCountries(limit = 8) {
+  const [rows, setRows] = useState<CountryStat[]>([]);
+
+  useEffect(() => {
+    let active = true;
+    const load = async () => {
+      const { data } = await supabase
+        .from("visits")
+        .select("country")
+        .not("country", "is", null)
+        .limit(5000);
+      if (!active) return;
+      const tally = new Map<string, number>();
+      for (const r of (data ?? []) as { country: string | null }[]) {
+        if (!r.country) continue;
+        tally.set(r.country, (tally.get(r.country) ?? 0) + 1);
+      }
+      const sorted = Array.from(tally.entries())
+        .map(([country, count]) => ({ country, count }))
+        .sort((a, b) => b.count - a.count)
+        .slice(0, limit);
+      setRows(sorted);
+    };
+    load();
+    const ch = supabase
+      .channel("visits-countries")
+      .on("postgres_changes", { event: "INSERT", schema: "public", table: "visits" }, () => load())
+      .subscribe();
+    return () => {
+      active = false;
+      supabase.removeChannel(ch);
+    };
+  }, [limit]);
+
+  return rows;
+}
+
+export type CityStat = { city: string; count: number };
+
+export function useTopPakistanCities(limit = 10) {
+  const [rows, setRows] = useState<CityStat[]>([]);
+
+  useEffect(() => {
+    let active = true;
+    const load = async () => {
+      const { data } = await supabase
+        .from("visits")
+        .select("city")
+        .eq("country_code", "PK")
+        .not("city", "is", null)
+        .limit(5000);
+      if (!active) return;
+      const tally = new Map<string, number>();
+      for (const r of (data ?? []) as { city: string | null }[]) {
+        if (!r.city) continue;
+        tally.set(r.city, (tally.get(r.city) ?? 0) + 1);
+      }
+      const sorted = Array.from(tally.entries())
+        .map(([city, count]) => ({ city, count }))
+        .sort((a, b) => b.count - a.count)
+        .slice(0, limit);
+      setRows(sorted);
+    };
+    load();
+    const ch = supabase
+      .channel("visits-pk-cities")
+      .on("postgres_changes", { event: "INSERT", schema: "public", table: "visits" }, () => load())
+      .subscribe();
+    return () => {
+      active = false;
+      supabase.removeChannel(ch);
+    };
+  }, [limit]);
+
+  return rows;
+}
