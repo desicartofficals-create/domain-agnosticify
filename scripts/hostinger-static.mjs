@@ -97,6 +97,28 @@ if (!existsSync(join(dist, "index.html"))) {
   process.exit(1);
 }
 
+// Deployment guardrail: the build must stay domain-agnostic. Every asset,
+// script and stylesheet reference in index.html has to be root-relative, and
+// no legacy hostname may be baked into the generated HTML.
+const generated = readFileSync(join(dist, "index.html"), "utf8");
+const legacyHosts = ["desicart.xyz"];
+const bakedHost = legacyHosts.find((host) => generated.includes(host));
+if (bakedHost) {
+  console.error(`Hostinger setup failed: hardcoded hostname "${bakedHost}" found in dist/index.html.`);
+  process.exit(1);
+}
+
+const allowedAbsolutePrefixes = ["https://fonts.googleapis.com", "https://fonts.gstatic.com"];
+const absoluteRefs = [...generated.matchAll(/(?:src|href)="(https?:\/\/[^"]+)"/g)]
+  .map((match) => match[1])
+  .filter((url) => !allowedAbsolutePrefixes.some((prefix) => url.startsWith(prefix)));
+if (absoluteRefs.length > 0) {
+  console.error(
+    `Hostinger setup failed: absolute asset URLs in dist/index.html must be relative:\n  ${absoluteRefs.join("\n  ")}`,
+  );
+  process.exit(1);
+}
+
 console.log(
   `Hostinger static output ready from ${client === nitroPublic ? ".output/public" : "dist/client"}: dist/index.html and .htaccess created.`,
 );
