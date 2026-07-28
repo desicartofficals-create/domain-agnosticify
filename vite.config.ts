@@ -12,4 +12,10 @@ export default defineConfig({
   tanstackStart: {
     server: { entry: "server" },
   },
+  // Domain-agnostic build: every emitted asset/script/stylesheet URL is a
+  // root-relative path ("/assets/..."), never an absolute URL tied to a
+  // specific hostname. This lets the same dist/ run on any domain.
+  vite: {
+    base: "/",
+  },
 });
