@@ -129,7 +129,7 @@ function sendIndex(res, req) {
   }
 }
 
-createServer(async (req, res) => {
+const server = createServer(async (req, res) => {
   try {
     const urlPath = (req.url || "/").split("?")[0];
 
