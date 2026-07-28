@@ -166,6 +166,12 @@ createServer(async (req, res) => {
     }
     res.end("Internal Server Error");
   }
-}).listen(port, () => {
-  console.log(`Node server listening on port ${port}`);
+});
+
+server.on("error", (err) => {
+  console.error("HTTP server error:", err);
+});
+
+server.listen(port, host, () => {
+  console.log(`Node server listening on ${host}:${port}`);
 });
