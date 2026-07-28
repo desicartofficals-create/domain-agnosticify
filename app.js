@@ -113,12 +113,20 @@ function sendFile(res, filePath, { cache } = {}) {
 }
 
 function sendIndex(res, req) {
-  const body = renderIndexHtml(req);
-  res.writeHead(200, {
-    "content-type": "text/html; charset=utf-8",
-    "cache-control": "no-cache",
-  });
-  res.end(body);
+  try {
+    const body = renderIndexHtml(req);
+    res.writeHead(200, {
+      "content-type": "text/html; charset=utf-8",
+      "cache-control": "no-cache",
+    });
+    res.end(body);
+  } catch (err) {
+    console.error("Failed to serve index.html:", err);
+    if (!res.headersSent) {
+      res.writeHead(500, { "content-type": "text/plain; charset=utf-8" });
+    }
+    res.end("Build output missing. Run `npm run build`, then restart the Node.js app.");
+  }
 }
 
 createServer(async (req, res) => {
