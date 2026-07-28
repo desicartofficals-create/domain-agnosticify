@@ -1,0 +1,1 @@
+UPDATE public.products SET image_url='https://xgwbmaydyhzqalfwvzzm.supabase.co/storage/v1/object/public/product-images/p9-wireless-headphones-clear.jpg' WHERE slug='p9-wireless-headphones';
