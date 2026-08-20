@@ -3,6 +3,7 @@ import { Outlet, Link, createRootRoute, HeadContent, Scripts } from "@tanstack/r
 import appCss from "../styles.css?url";
 import { Toaster } from "@/components/ui/sonner";
 import { CartDrawer } from "@/components/CartDrawer";
+import TikTokPixel from "@/components/TikTokPixel";
 
 function NotFoundComponent() {
   return (
@@ -81,6 +82,7 @@ function RootComponent() {
       <Outlet />
       <CartDrawer />
       <Toaster />
+      <TikTokPixel />
     </>
   );
 }
