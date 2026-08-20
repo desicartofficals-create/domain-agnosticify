@@ -5,6 +5,7 @@ import { toast } from "sonner";
 import type { Product } from "@/lib/products";
 import { supabase } from "@/integrations/supabase/client";
 import { openCart, useCart } from "@/lib/use-cart";
+import { trackTikTokEvent } from "@/utils/tiktokPixel";
 
 type CustomerOrderFormProps = {
   product: Product;
@@ -21,6 +22,15 @@ export function CustomerOrderForm({ product, selectedColor }: CustomerOrderFormP
   const handleAddToCart = () => {
     addItem({ slug: product.slug, name: product.name, price: product.price, img: product.img }, qty, selectedColor);
     toast.success(`${qty} × ${product.name}${selectedColor ? ` (${selectedColor})` : ""} added to cart`);
+    trackTikTokEvent("AddToCart", {
+      content_type: "product",
+      content_id: product.slug,
+      content_name: product.name,
+      content_category: product.category,
+      quantity: qty,
+      value: subtotal ?? 0,
+      currency: "PKR",
+    });
     openCart();
   };
 
@@ -61,6 +71,15 @@ export function CustomerOrderForm({ product, selectedColor }: CustomerOrderFormP
       return;
     }
     setPlaced(true);
+    trackTikTokEvent("PlaceAnOrder", {
+      content_type: "product",
+      content_id: product.slug,
+      content_name: product.name,
+      content_category: product.category,
+      quantity: qty,
+      value: grandTotal ?? 0,
+      currency: "PKR",
+    });
     toast.success("Order placed! We'll call you shortly to confirm.");
     setDetails({ name: "", phone: "", city: "", address: "" });
     setQty(1);

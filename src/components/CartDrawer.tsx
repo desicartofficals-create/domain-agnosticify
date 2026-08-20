@@ -1,8 +1,9 @@
 import { useEffect, useState, type FormEvent } from "react";
 import { Loader2, Minus, Plus, ShoppingBag, Trash2, X, CheckCircle2 } from "lucide-react";
 import { toast } from "sonner";
-import { useCart, onCartOpen } from "@/lib/use-cart";
+import { useCart, onCartOpen, priceToNumber } from "@/lib/use-cart";
 import { supabase } from "@/integrations/supabase/client";
+import { trackTikTokEvent } from "@/utils/tiktokPixel";
 
 const DELIVERY_CHARGE = 0;
 
@@ -62,6 +63,17 @@ export function CartDrawer() {
       return;
     }
     setPlaced(true);
+    trackTikTokEvent("PlaceAnOrder", {
+      content_type: "product",
+      value: total,
+      currency: "PKR",
+      contents: items.map((i) => ({
+        content_id: i.slug,
+        content_name: i.name,
+        quantity: i.qty,
+        price: priceToNumber(i.price),
+      })),
+    });
     clear();
     setDetails({ name: "", phone: "", city: "", address: "" });
     toast.success("Order placed! We'll call you shortly to confirm.");

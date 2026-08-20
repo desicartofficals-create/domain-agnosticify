@@ -5,8 +5,9 @@ import logoImg from "@/assets/desicart-logo.png";
 import { waLinkFor } from "@/lib/products";
 import { useProduct, useProducts } from "@/lib/use-products";
 import { CustomerOrderForm } from "@/components/CustomerOrderForm";
-import { openCart, useCart } from "@/lib/use-cart";
+import { openCart, useCart, priceToNumber } from "@/lib/use-cart";
 import { ProductReviews } from "@/components/ProductReviews";
+import { trackTikTokEvent } from "@/utils/tiktokPixel";
 
 export const Route = createFileRoute("/product/$slug")({
   component: ProductPage,
@@ -101,6 +102,18 @@ function ProductPage() {
     setActiveColor(null);
     setLightboxIdx(null);
   }, [slug]);
+
+  useEffect(() => {
+    if (!product) return;
+    trackTikTokEvent("ViewContent", {
+      content_type: "product",
+      content_id: product.slug,
+      content_name: product.name,
+      content_category: product.category,
+      value: priceToNumber(product.price),
+      currency: "PKR",
+    });
+  }, [product?.slug]);
 
   useEffect(() => {
     if (lightboxIdx === null) return;
