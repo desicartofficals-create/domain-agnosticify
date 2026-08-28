@@ -89,6 +89,14 @@ export function CustomerOrderForm({ product, selectedColor }: CustomerOrderFormP
       value: grandTotal ?? 0,
       currency: "PKR",
     });
+    trackMetaEvent("Purchase", {
+      value: grandTotal ?? 0,
+      currency: "PKR",
+      content_type: "product",
+      content_ids: [product.slug],
+      content_name: product.name,
+      num_items: qty,
+    });
     toast.success("Order placed! We'll call you shortly to confirm.");
     setDetails({ name: "", phone: "", city: "", address: "" });
     setQty(1);
