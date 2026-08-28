@@ -32,6 +32,14 @@ export function CustomerOrderForm({ product, selectedColor }: CustomerOrderFormP
       value: subtotal ?? 0,
       currency: "PKR",
     });
+    trackMetaEvent("AddToCart", {
+      value: subtotal ?? 0,
+      currency: "PKR",
+      content_ids: [product.slug],
+      content_name: product.name,
+      content_type: "product",
+    });
+    trackMetaClick("add_to_cart", { product: product.slug });
     openCart();
   };
 

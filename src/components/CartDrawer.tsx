@@ -75,6 +75,12 @@ export function CartDrawer() {
         price: priceToNumber(i.price),
       })),
     });
+    trackMetaEvent("Purchase", {
+      value: total,
+      currency: "PKR",
+      content_type: "product",
+      content_ids: items.map((i) => i.slug),
+    });
     clear();
     setDetails({ name: "", phone: "", city: "", address: "" });
     toast.success("Order placed! We'll call you shortly to confirm.");
