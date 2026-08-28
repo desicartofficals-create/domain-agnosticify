@@ -4,6 +4,7 @@ import appCss from "../styles.css?url";
 import { Toaster } from "@/components/ui/sonner";
 import { CartDrawer } from "@/components/CartDrawer";
 import TikTokPixel from "@/components/TikTokPixel";
+import MetaPixel from "@/components/MetaPixel";
 
 function NotFoundComponent() {
   return (
@@ -83,6 +84,7 @@ function RootComponent() {
       <CartDrawer />
       <Toaster />
       <TikTokPixel />
+      <MetaPixel />
     </>
   );
 }

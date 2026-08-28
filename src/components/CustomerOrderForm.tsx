@@ -6,6 +6,7 @@ import type { Product } from "@/lib/products";
 import { supabase } from "@/integrations/supabase/client";
 import { openCart, useCart } from "@/lib/use-cart";
 import { trackTikTokEvent } from "@/utils/tiktokPixel";
+import { trackMetaClick, trackMetaEvent } from "@/utils/metaPixel";
 
 type CustomerOrderFormProps = {
   product: Product;
