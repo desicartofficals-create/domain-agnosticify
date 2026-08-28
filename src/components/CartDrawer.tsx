@@ -4,6 +4,7 @@ import { toast } from "sonner";
 import { useCart, onCartOpen, priceToNumber } from "@/lib/use-cart";
 import { supabase } from "@/integrations/supabase/client";
 import { trackTikTokEvent } from "@/utils/tiktokPixel";
+import { trackMetaEvent } from "@/utils/metaPixel";
 
 const DELIVERY_CHARGE = 0;
 
@@ -73,6 +74,12 @@ export function CartDrawer() {
         quantity: i.qty,
         price: priceToNumber(i.price),
       })),
+    });
+    trackMetaEvent("Purchase", {
+      value: total,
+      currency: "PKR",
+      content_type: "product",
+      content_ids: items.map((i) => i.slug),
     });
     clear();
     setDetails({ name: "", phone: "", city: "", address: "" });

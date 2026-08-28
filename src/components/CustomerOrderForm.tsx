@@ -6,6 +6,7 @@ import type { Product } from "@/lib/products";
 import { supabase } from "@/integrations/supabase/client";
 import { openCart, useCart } from "@/lib/use-cart";
 import { trackTikTokEvent } from "@/utils/tiktokPixel";
+import { trackMetaClick, trackMetaEvent } from "@/utils/metaPixel";
 
 type CustomerOrderFormProps = {
   product: Product;
@@ -31,6 +32,14 @@ export function CustomerOrderForm({ product, selectedColor }: CustomerOrderFormP
       value: subtotal ?? 0,
       currency: "PKR",
     });
+    trackMetaEvent("AddToCart", {
+      value: subtotal ?? 0,
+      currency: "PKR",
+      content_ids: [product.slug],
+      content_name: product.name,
+      content_type: "product",
+    });
+    trackMetaClick("add_to_cart", { product: product.slug });
     openCart();
   };
 
@@ -79,6 +88,14 @@ export function CustomerOrderForm({ product, selectedColor }: CustomerOrderFormP
       quantity: qty,
       value: grandTotal ?? 0,
       currency: "PKR",
+    });
+    trackMetaEvent("Purchase", {
+      value: grandTotal ?? 0,
+      currency: "PKR",
+      content_type: "product",
+      content_ids: [product.slug],
+      content_name: product.name,
+      num_items: qty,
     });
     toast.success("Order placed! We'll call you shortly to confirm.");
     setDetails({ name: "", phone: "", city: "", address: "" });
