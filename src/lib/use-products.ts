@@ -56,7 +56,7 @@ export function useProducts() {
     const load = async () => {
       const { data, error } = await supabase
         .from("products")
-        .select("slug,name,tagline,price,old_price,image_url,tag,category,description,features,sort_order,images,colors")
+        .select(SELECT_COLS)
         .order("sort_order", { ascending: true });
       if (!active) return;
       if (error) {
@@ -93,7 +93,7 @@ export function useProduct(slug: string) {
     const load = async () => {
       const { data, error } = await supabase
         .from("products")
-        .select("slug,name,tagline,price,old_price,image_url,tag,category,description,features,sort_order,images,colors")
+        .select(SELECT_COLS)
         .eq("slug", slug)
         .maybeSingle();
       if (!active) return;
