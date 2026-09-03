@@ -16,7 +16,14 @@ type DbRow = {
   sort_order: number;
   images?: string[] | null;
   colors?: string[] | null;
+  sections?: string[] | null;
+  discount_percent?: number | null;
+  category_slug?: string | null;
+  views_count?: number | null;
 };
+
+const SELECT_COLS =
+  "slug,name,tagline,price,old_price,image_url,tag,category,description,features,sort_order,images,colors,sections,discount_percent,category_slug,views_count";
 
 function mapRow(r: DbRow): Product {
   return {
@@ -32,8 +39,13 @@ function mapRow(r: DbRow): Product {
     features: r.features ?? [],
     images: r.images ?? [],
     colors: r.colors ?? [],
+    sections: r.sections ?? [],
+    discountPercent: r.discount_percent ?? undefined,
+    categorySlug: r.category_slug ?? undefined,
+    viewsCount: r.views_count ?? 0,
   };
 }
+
 
 export function useProducts() {
   const [products, setProducts] = useState<Product[]>([]);
