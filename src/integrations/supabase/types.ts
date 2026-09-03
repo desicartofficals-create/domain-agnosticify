@@ -14,252 +14,16 @@ export type Database = {
   }
   public: {
     Tables: {
-      categories: {
-        Row: {
-          created_at: string
-          id: string
-          image_url: string | null
-          label: string
-          link_slug: string
-          slug: string
-          sort_order: number
-          updated_at: string
-        }
-        Insert: {
-          created_at?: string
-          id?: string
-          image_url?: string | null
-          label: string
-          link_slug: string
-          slug: string
-          sort_order?: number
-          updated_at?: string
-        }
-        Update: {
-          created_at?: string
-          id?: string
-          image_url?: string | null
-          label?: string
-          link_slug?: string
-          slug?: string
-          sort_order?: number
-          updated_at?: string
-        }
-        Relationships: []
-      }
-      orders: {
-        Row: {
-          created_at: string
-          customer_address: string
-          customer_city: string
-          customer_name: string
-          customer_phone: string
-          delivery_charge: number
-          id: string
-          notes: string | null
-          product_color: string | null
-          product_name: string
-          product_slug: string
-          quantity: number
-          status: string
-          subtotal: number | null
-          total: number | null
-          unit_price: string
-          updated_at: string
-        }
-        Insert: {
-          created_at?: string
-          customer_address: string
-          customer_city: string
-          customer_name: string
-          customer_phone: string
-          delivery_charge?: number
-          id?: string
-          notes?: string | null
-          product_color?: string | null
-          product_name: string
-          product_slug: string
-          quantity?: number
-          status?: string
-          subtotal?: number | null
-          total?: number | null
-          unit_price: string
-          updated_at?: string
-        }
-        Update: {
-          created_at?: string
-          customer_address?: string
-          customer_city?: string
-          customer_name?: string
-          customer_phone?: string
-          delivery_charge?: number
-          id?: string
-          notes?: string | null
-          product_color?: string | null
-          product_name?: string
-          product_slug?: string
-          quantity?: number
-          status?: string
-          subtotal?: number | null
-          total?: number | null
-          unit_price?: string
-          updated_at?: string
-        }
-        Relationships: []
-      }
-      products: {
-        Row: {
-          category: string
-          colors: string[]
-          created_at: string
-          description: string
-          features: string[]
-          id: string
-          image_url: string | null
-          images: string[]
-          name: string
-          old_price: string | null
-          price: string
-          slug: string
-          sort_order: number
-          tag: string | null
-          tagline: string
-          updated_at: string
-        }
-        Insert: {
-          category?: string
-          colors?: string[]
-          created_at?: string
-          description?: string
-          features?: string[]
-          id?: string
-          image_url?: string | null
-          images?: string[]
-          name: string
-          old_price?: string | null
-          price: string
-          slug: string
-          sort_order?: number
-          tag?: string | null
-          tagline?: string
-          updated_at?: string
-        }
-        Update: {
-          category?: string
-          colors?: string[]
-          created_at?: string
-          description?: string
-          features?: string[]
-          id?: string
-          image_url?: string | null
-          images?: string[]
-          name?: string
-          old_price?: string | null
-          price?: string
-          slug?: string
-          sort_order?: number
-          tag?: string | null
-          tagline?: string
-          updated_at?: string
-        }
-        Relationships: []
-      }
-      reviews: {
-        Row: {
-          comment: string
-          created_at: string
-          customer_name: string
-          id: string
-          image_url: string | null
-          product_slug: string
-          rating: number
-        }
-        Insert: {
-          comment?: string
-          created_at?: string
-          customer_name: string
-          id?: string
-          image_url?: string | null
-          product_slug: string
-          rating?: number
-        }
-        Update: {
-          comment?: string
-          created_at?: string
-          customer_name?: string
-          id?: string
-          image_url?: string | null
-          product_slug?: string
-          rating?: number
-        }
-        Relationships: []
-      }
-      user_roles: {
-        Row: {
-          created_at: string
-          id: string
-          role: Database["public"]["Enums"]["app_role"]
-          user_id: string
-        }
-        Insert: {
-          created_at?: string
-          id?: string
-          role: Database["public"]["Enums"]["app_role"]
-          user_id: string
-        }
-        Update: {
-          created_at?: string
-          id?: string
-          role?: Database["public"]["Enums"]["app_role"]
-          user_id?: string
-        }
-        Relationships: []
-      }
-      visits: {
-        Row: {
-          city: string | null
-          country: string | null
-          country_code: string | null
-          created_at: string
-          id: string
-          path: string | null
-          referrer: string | null
-        }
-        Insert: {
-          city?: string | null
-          country?: string | null
-          country_code?: string | null
-          created_at?: string
-          id?: string
-          path?: string | null
-          referrer?: string | null
-        }
-        Update: {
-          city?: string | null
-          country?: string | null
-          country_code?: string | null
-          created_at?: string
-          id?: string
-          path?: string | null
-          referrer?: string | null
-        }
-        Relationships: []
-      }
+      [_ in never]: never
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
-      has_role: {
-        Args: {
-          _role: Database["public"]["Enums"]["app_role"]
-          _user_id: string
-        }
-        Returns: boolean
-      }
+      [_ in never]: never
     }
     Enums: {
-      app_role: "admin" | "user"
+      [_ in never]: never
     }
     CompositeTypes: {
       [_ in never]: never
@@ -275,12 +39,12 @@ export type Tables<
   DefaultSchemaTableNameOrOptions extends
     | keyof (DefaultSchema["Tables"] & DefaultSchema["Views"])
     | { schema: keyof DatabaseWithoutInternals },
-  TableName extends DefaultSchemaTableNameOrOptions extends {
+  TableName extends (DefaultSchemaTableNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals
   }
     ? keyof (DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"] &
         DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Views"])
-    : never = never,
+    : never) = never,
 > = DefaultSchemaTableNameOrOptions extends {
   schema: keyof DatabaseWithoutInternals
 }
@@ -304,11 +68,11 @@ export type TablesInsert<
   DefaultSchemaTableNameOrOptions extends
     | keyof DefaultSchema["Tables"]
     | { schema: keyof DatabaseWithoutInternals },
-  TableName extends DefaultSchemaTableNameOrOptions extends {
+  TableName extends (DefaultSchemaTableNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals
   }
     ? keyof DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"]
-    : never = never,
+    : never) = never,
 > = DefaultSchemaTableNameOrOptions extends {
   schema: keyof DatabaseWithoutInternals
 }
@@ -329,11 +93,11 @@ export type TablesUpdate<
   DefaultSchemaTableNameOrOptions extends
     | keyof DefaultSchema["Tables"]
     | { schema: keyof DatabaseWithoutInternals },
-  TableName extends DefaultSchemaTableNameOrOptions extends {
+  TableName extends (DefaultSchemaTableNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals
   }
     ? keyof DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"]
-    : never = never,
+    : never) = never,
 > = DefaultSchemaTableNameOrOptions extends {
   schema: keyof DatabaseWithoutInternals
 }
@@ -354,11 +118,11 @@ export type Enums<
   DefaultSchemaEnumNameOrOptions extends
     | keyof DefaultSchema["Enums"]
     | { schema: keyof DatabaseWithoutInternals },
-  EnumName extends DefaultSchemaEnumNameOrOptions extends {
+  EnumName extends (DefaultSchemaEnumNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals
   }
     ? keyof DatabaseWithoutInternals[DefaultSchemaEnumNameOrOptions["schema"]]["Enums"]
-    : never = never,
+    : never) = never,
 > = DefaultSchemaEnumNameOrOptions extends {
   schema: keyof DatabaseWithoutInternals
 }
@@ -371,11 +135,11 @@ export type CompositeTypes<
   PublicCompositeTypeNameOrOptions extends
     | keyof DefaultSchema["CompositeTypes"]
     | { schema: keyof DatabaseWithoutInternals },
-  CompositeTypeName extends PublicCompositeTypeNameOrOptions extends {
+  CompositeTypeName extends (PublicCompositeTypeNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals
   }
     ? keyof DatabaseWithoutInternals[PublicCompositeTypeNameOrOptions["schema"]]["CompositeTypes"]
-    : never = never,
+    : never) = never,
 > = PublicCompositeTypeNameOrOptions extends {
   schema: keyof DatabaseWithoutInternals
 }
@@ -386,8 +150,6 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {
-      app_role: ["admin", "user"],
-    },
+    Enums: {},
   },
 } as const
