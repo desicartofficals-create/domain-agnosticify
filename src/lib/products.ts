@@ -22,7 +22,12 @@ export type Product = {
   features: string[];
   images?: string[];
   colors?: string[];
+  sections?: string[];
+  discountPercent?: number;
+  categorySlug?: string;
+  viewsCount?: number;
 };
+
 
 // Fallback images for the seeded products (used when image_url is null in DB)
 export const fallbackImageBySlug: Record<string, string> = {
