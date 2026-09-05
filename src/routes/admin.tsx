@@ -836,6 +836,12 @@ function AdminDashboard() {
         <VisitorStat />
 
         {/* Category icons */}
+        <RibbonPanel />
+
+        <HeroSlidesPanel />
+
+        <SocialLinksPanel />
+
         <CategoriesPanel />
 
         {/* Orders */}
@@ -903,6 +909,30 @@ function AdminDashboard() {
                       <input value={row.category} onChange={(e) => update(row.id, { category: e.target.value })} placeholder="Category" className="h-11 rounded-full border border-input bg-background px-4 text-sm outline-none focus:border-accent" />
                       <input value={row.tagline} onChange={(e) => update(row.id, { tagline: e.target.value })} placeholder="Tagline" className="h-11 sm:col-span-2 rounded-full border border-input bg-background px-4 text-sm outline-none focus:border-accent" />
                       <input type="number" value={row.sort_order} onChange={(e) => update(row.id, { sort_order: Number(e.target.value) || 0 })} placeholder="Sort order" className="h-11 rounded-full border border-input bg-background px-4 text-sm outline-none focus:border-accent" />
+                      <input type="number" value={row.discount_percent ?? ""} onChange={(e) => update(row.id, { discount_percent: e.target.value === "" ? null : Number(e.target.value) })} placeholder="Discount % (blank = auto)" className="h-11 rounded-full border border-input bg-background px-4 text-sm outline-none focus:border-accent" />
+                      <input value={row.category_slug ?? ""} onChange={(e) => update(row.id, { category_slug: e.target.value })} placeholder="Category icon slug (e.g. airpods)" className="h-11 sm:col-span-2 rounded-full border border-input bg-background px-4 text-sm outline-none focus:border-accent" />
+                      <div className="sm:col-span-2 flex flex-wrap items-center gap-3">
+                        <span className="text-xs font-bold uppercase tracking-widest text-muted-foreground">Show in rows:</span>
+                        {SECTION_OPTIONS.map((s) => {
+                          const on = (row.sections ?? []).includes(s);
+                          return (
+                            <label key={s} className="inline-flex items-center gap-1.5 text-sm">
+                              <input
+                                type="checkbox"
+                                checked={on}
+                                onChange={() =>
+                                  update(row.id, {
+                                    sections: on
+                                      ? (row.sections ?? []).filter((x) => x !== s)
+                                      : [...(row.sections ?? []), s],
+                                  })
+                                }
+                              />
+                              {s}
+                            </label>
+                          );
+                        })}
+                      </div>
                     </div>
                   </div>
                   <textarea value={row.description} onChange={(e) => update(row.id, { description: e.target.value })} placeholder="Description" className="w-full min-h-20 rounded-2xl border border-input bg-background p-3 text-sm outline-none focus:border-accent" />
