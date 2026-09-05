@@ -710,6 +710,9 @@ function AdminDashboard() {
         sort_order: row.sort_order,
         images: row.images ?? [],
         colors: row.colors ?? [],
+        sections: row.sections ?? [],
+        discount_percent: row.discount_percent,
+        category_slug: row.category_slug || null,
       })
       .eq("id", row.id);
     setSavingId(null);
@@ -729,24 +732,16 @@ function AdminDashboard() {
 
   const uploadImage = async (rowId: string, file: File) => {
     setSavingId(rowId);
-    const ext = file.name.split(".").pop() || "png";
-    const path = `${rowId}-${Date.now()}.${ext}`;
-    const { error: upErr } = await supabase.storage
-      .from("product-images")
-      .upload(path, file, { upsert: false, contentType: file.type });
-    if (upErr) {
-      toast.error(upErr.message);
-      setSavingId(null);
-      return;
-    }
-    const { data: pub } = supabase.storage.from("product-images").getPublicUrl(path);
-    const url = pub.publicUrl;
-    const { error } = await supabase.from("products").update({ image_url: url }).eq("id", rowId);
-    setSavingId(null);
-    if (error) toast.error(error.message);
-    else {
+    try {
+      const url = await uploadToStorage(file, imagePath(rowId, file));
+      const { error } = await supabase.from("products").update({ image_url: url }).eq("id", rowId);
+      if (error) throw error;
       update(rowId, { image_url: url });
       toast.success("Image updated.");
+    } catch (e) {
+      toast.error((e as Error).message);
+    } finally {
+      setSavingId(null);
     }
   };
 
@@ -754,16 +749,11 @@ function AdminDashboard() {
     setSavingId(rowId);
     const urls: string[] = [];
     for (const file of Array.from(files)) {
-      const ext = file.name.split(".").pop() || "png";
-      const path = `${rowId}-extra-${Date.now()}-${Math.random().toString(36).slice(2, 7)}.${ext}`;
-      const { error: upErr } = await supabase.storage
-        .from("product-images")
-        .upload(path, file, { upsert: false, contentType: file.type });
-      if (upErr) {
-        toast.error(upErr.message);
-        continue;
+      try {
+        urls.push(await uploadToStorage(file, imagePath(`${rowId}-extra`, file)));
+      } catch (e) {
+        toast.error((e as Error).message);
       }
-      urls.push(supabase.storage.from("product-images").getPublicUrl(path).data.publicUrl);
     }
     if (urls.length === 0) {
       setSavingId(null);
