@@ -5,6 +5,10 @@ import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { fallbackImageBySlug, placeholderImg } from "@/lib/products";
 import { useVisitorCount, useTopCountries, useTopPakistanCities } from "@/lib/use-products";
+import { uploadImage as uploadToStorage, imagePath } from "@/lib/storage";
+import { RibbonPanel, SocialLinksPanel, HeroSlidesPanel } from "@/components/admin/SitePanels";
+
+const SECTION_OPTIONS = ["Best Sellers", "Best Offers", "Just Launched"] as const;
 
 export const Route = createFileRoute("/admin")({
   component: AdminPage,
@@ -26,6 +30,9 @@ type ProductRow = {
   sort_order: number;
   images: string[];
   colors: string[];
+  sections: string[];
+  discount_percent: number | null;
+  category_slug: string | null;
 };
 
 const EMPTY_NEW = {
@@ -136,17 +143,17 @@ function CategoriesPanel() {
 
   const uploadIcon = async (rowId: string, file: File) => {
     setBusyId(rowId);
-    const ext = file.name.split(".").pop() || "png";
-    const path = `category-${rowId}-${Date.now()}.${ext}`;
-    const { error: upErr } = await supabase.storage
-      .from("product-images")
-      .upload(path, file, { upsert: false, contentType: file.type });
-    if (upErr) { toast.error(upErr.message); setBusyId(null); return; }
-    const url = supabase.storage.from("product-images").getPublicUrl(path).data.publicUrl;
-    const { error } = await supabase.from("categories").update({ image_url: url }).eq("id", rowId);
-    setBusyId(null);
-    if (error) toast.error(error.message);
-    else { update(rowId, { image_url: url }); toast.success("Category icon updated."); }
+    try {
+      const url = await uploadToStorage(file, imagePath(`category-${rowId}`, file));
+      const { error } = await supabase.from("categories").update({ image_url: url }).eq("id", rowId);
+      if (error) throw error;
+      update(rowId, { image_url: url });
+      toast.success("Category icon updated.");
+    } catch (e) {
+      toast.error((e as Error).message);
+    } finally {
+      setBusyId(null);
+    }
   };
 
   const remove = async (row: CategoryRow) => {
