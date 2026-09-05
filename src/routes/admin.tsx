@@ -8,7 +8,11 @@ import { useVisitorCount, useTopCountries, useTopPakistanCities } from "@/lib/us
 import { uploadImage as uploadToStorage, imagePath } from "@/lib/storage";
 import { RibbonPanel, SocialLinksPanel, HeroSlidesPanel } from "@/components/admin/SitePanels";
 
-const SECTION_OPTIONS = ["Best Sellers", "Best Offers", "Just Launched"] as const;
+const SECTION_OPTIONS = [
+  { key: "best-sellers", label: "Best Sellers" },
+  { key: "best-offers", label: "Best Offers" },
+  { key: "just-launched", label: "Just Launched" },
+] as const;
 
 export const Route = createFileRoute("/admin")({
   component: AdminPage,
@@ -914,21 +918,21 @@ function AdminDashboard() {
                       <div className="sm:col-span-2 flex flex-wrap items-center gap-3">
                         <span className="text-xs font-bold uppercase tracking-widest text-muted-foreground">Show in rows:</span>
                         {SECTION_OPTIONS.map((s) => {
-                          const on = (row.sections ?? []).includes(s);
+                          const on = (row.sections ?? []).includes(s.key);
                           return (
-                            <label key={s} className="inline-flex items-center gap-1.5 text-sm">
+                            <label key={s.key} className="inline-flex items-center gap-1.5 text-sm">
                               <input
                                 type="checkbox"
                                 checked={on}
                                 onChange={() =>
                                   update(row.id, {
                                     sections: on
-                                      ? (row.sections ?? []).filter((x) => x !== s)
-                                      : [...(row.sections ?? []), s],
+                                      ? (row.sections ?? []).filter((x) => x !== s.key)
+                                      : [...(row.sections ?? []), s.key],
                                   })
                                 }
                               />
-                              {s}
+                              {s.label}
                             </label>
                           );
                         })}
