@@ -340,7 +340,7 @@ function OrdersPanel() {
   useEffect(() => {
     load();
     const ch = supabase
-      .channel("orders-admin")
+      .channel(`orders-admin-${Math.random().toString(36).slice(2)}`)
       .on("postgres_changes", { event: "*", schema: "public", table: "orders" }, () => load())
       .subscribe();
     return () => {
@@ -515,7 +515,7 @@ function ReviewsPanel() {
   useEffect(() => {
     load();
     const channel = supabase
-      .channel("reviews-admin")
+      .channel(`reviews-admin-${Math.random().toString(36).slice(2)}`)
       .on("postgres_changes", { event: "*", schema: "public", table: "reviews" }, () => load())
       .subscribe();
     return () => {

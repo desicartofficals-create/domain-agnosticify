@@ -41,7 +41,7 @@ export function useSiteSettings() {
     };
     load();
     const ch = supabase
-      .channel("site-settings")
+      .channel(`site-settings-${Math.random().toString(36).slice(2)}`)
       .on("postgres_changes", { event: "*", schema: "public", table: "site_settings" }, () => load())
       .subscribe();
     return () => {
@@ -83,7 +83,7 @@ export function useHeroSlides(onlyActive = true) {
     };
     load();
     const ch = supabase
-      .channel(`hero-slides-${onlyActive ? "public" : "admin"}`)
+      .channel(`hero-slides-${onlyActive ? "public" : "admin"}-${Math.random().toString(36).slice(2)}`)
       .on("postgres_changes", { event: "*", schema: "public", table: "hero_slides" }, () => load())
       .subscribe();
     return () => {
@@ -118,7 +118,7 @@ export function useProductRatings() {
     };
     load();
     const ch = supabase
-      .channel("reviews-ratings")
+      .channel(`reviews-ratings-${Math.random().toString(36).slice(2)}`)
       .on("postgres_changes", { event: "*", schema: "public", table: "reviews" }, () => load())
       .subscribe();
     return () => {
