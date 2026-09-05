@@ -71,7 +71,7 @@ export function useProducts() {
 
     // Realtime: any change in products refreshes the list instantly
     const channel = supabase
-      .channel("products-changes")
+      .channel(`products-changes-${Math.random().toString(36).slice(2)}`)
       .on("postgres_changes", { event: "*", schema: "public", table: "products" }, () => load())
       .subscribe();
 
@@ -104,7 +104,7 @@ export function useProduct(slug: string) {
     load();
 
     const channel = supabase
-      .channel(`product-${slug}`)
+      .channel(`product-${slug}-${Math.random().toString(36).slice(2)}`)
       .on("postgres_changes", { event: "*", schema: "public", table: "products", filter: `slug=eq.${slug}` }, () => load())
       .subscribe();
 
@@ -143,7 +143,7 @@ export function useCategories() {
     };
     load();
     const ch = supabase
-      .channel("categories-changes")
+      .channel(`categories-changes-${Math.random().toString(36).slice(2)}`)
       .on("postgres_changes", { event: "*", schema: "public", table: "categories" }, () => load())
       .subscribe();
     return () => {
@@ -168,7 +168,7 @@ export function useVisitorCount() {
     };
     load();
     const ch = supabase
-      .channel("visits-count")
+      .channel(`visits-count-${Math.random().toString(36).slice(2)}`)
       .on("postgres_changes", { event: "INSERT", schema: "public", table: "visits" }, () => load())
       .subscribe();
     return () => {
@@ -241,7 +241,7 @@ export function useTopCountries(limit = 8) {
     };
     load();
     const ch = supabase
-      .channel("visits-countries")
+      .channel(`visits-countries-${Math.random().toString(36).slice(2)}`)
       .on("postgres_changes", { event: "INSERT", schema: "public", table: "visits" }, () => load())
       .subscribe();
     return () => {
@@ -281,7 +281,7 @@ export function useTopPakistanCities(limit = 10) {
     };
     load();
     const ch = supabase
-      .channel("visits-pk-cities")
+      .channel(`visits-pk-cities-${Math.random().toString(36).slice(2)}`)
       .on("postgres_changes", { event: "INSERT", schema: "public", table: "visits" }, () => load())
       .subscribe();
     return () => {

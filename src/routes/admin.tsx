@@ -5,6 +5,14 @@ import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { fallbackImageBySlug, placeholderImg } from "@/lib/products";
 import { useVisitorCount, useTopCountries, useTopPakistanCities } from "@/lib/use-products";
+import { uploadImage as uploadToStorage, imagePath } from "@/lib/storage";
+import { RibbonPanel, SocialLinksPanel, HeroSlidesPanel } from "@/components/admin/SitePanels";
+
+const SECTION_OPTIONS = [
+  { key: "best-sellers", label: "Best Sellers" },
+  { key: "best-offers", label: "Best Offers" },
+  { key: "just-launched", label: "Just Launched" },
+] as const;
 
 export const Route = createFileRoute("/admin")({
   component: AdminPage,
@@ -26,6 +34,9 @@ type ProductRow = {
   sort_order: number;
   images: string[];
   colors: string[];
+  sections: string[];
+  discount_percent: number | null;
+  category_slug: string | null;
 };
 
 const EMPTY_NEW = {
@@ -136,17 +147,17 @@ function CategoriesPanel() {
 
   const uploadIcon = async (rowId: string, file: File) => {
     setBusyId(rowId);
-    const ext = file.name.split(".").pop() || "png";
-    const path = `category-${rowId}-${Date.now()}.${ext}`;
-    const { error: upErr } = await supabase.storage
-      .from("product-images")
-      .upload(path, file, { upsert: false, contentType: file.type });
-    if (upErr) { toast.error(upErr.message); setBusyId(null); return; }
-    const url = supabase.storage.from("product-images").getPublicUrl(path).data.publicUrl;
-    const { error } = await supabase.from("categories").update({ image_url: url }).eq("id", rowId);
-    setBusyId(null);
-    if (error) toast.error(error.message);
-    else { update(rowId, { image_url: url }); toast.success("Category icon updated."); }
+    try {
+      const url = await uploadToStorage(file, imagePath(`category-${rowId}`, file));
+      const { error } = await supabase.from("categories").update({ image_url: url }).eq("id", rowId);
+      if (error) throw error;
+      update(rowId, { image_url: url });
+      toast.success("Category icon updated.");
+    } catch (e) {
+      toast.error((e as Error).message);
+    } finally {
+      setBusyId(null);
+    }
   };
 
   const remove = async (row: CategoryRow) => {
@@ -333,7 +344,7 @@ function OrdersPanel() {
   useEffect(() => {
     load();
     const ch = supabase
-      .channel("orders-admin")
+      .channel(`orders-admin-${Math.random().toString(36).slice(2)}`)
       .on("postgres_changes", { event: "*", schema: "public", table: "orders" }, () => load())
       .subscribe();
     return () => {
@@ -508,7 +519,7 @@ function ReviewsPanel() {
   useEffect(() => {
     load();
     const channel = supabase
-      .channel("reviews-admin")
+      .channel(`reviews-admin-${Math.random().toString(36).slice(2)}`)
       .on("postgres_changes", { event: "*", schema: "public", table: "reviews" }, () => load())
       .subscribe();
     return () => {
@@ -703,6 +714,9 @@ function AdminDashboard() {
         sort_order: row.sort_order,
         images: row.images ?? [],
         colors: row.colors ?? [],
+        sections: row.sections ?? [],
+        discount_percent: row.discount_percent,
+        category_slug: row.category_slug || null,
       })
       .eq("id", row.id);
     setSavingId(null);
@@ -722,24 +736,16 @@ function AdminDashboard() {
 
   const uploadImage = async (rowId: string, file: File) => {
     setSavingId(rowId);
-    const ext = file.name.split(".").pop() || "png";
-    const path = `${rowId}-${Date.now()}.${ext}`;
-    const { error: upErr } = await supabase.storage
-      .from("product-images")
-      .upload(path, file, { upsert: false, contentType: file.type });
-    if (upErr) {
-      toast.error(upErr.message);
-      setSavingId(null);
-      return;
-    }
-    const { data: pub } = supabase.storage.from("product-images").getPublicUrl(path);
-    const url = pub.publicUrl;
-    const { error } = await supabase.from("products").update({ image_url: url }).eq("id", rowId);
-    setSavingId(null);
-    if (error) toast.error(error.message);
-    else {
+    try {
+      const url = await uploadToStorage(file, imagePath(rowId, file));
+      const { error } = await supabase.from("products").update({ image_url: url }).eq("id", rowId);
+      if (error) throw error;
       update(rowId, { image_url: url });
       toast.success("Image updated.");
+    } catch (e) {
+      toast.error((e as Error).message);
+    } finally {
+      setSavingId(null);
     }
   };
 
@@ -747,16 +753,11 @@ function AdminDashboard() {
     setSavingId(rowId);
     const urls: string[] = [];
     for (const file of Array.from(files)) {
-      const ext = file.name.split(".").pop() || "png";
-      const path = `${rowId}-extra-${Date.now()}-${Math.random().toString(36).slice(2, 7)}.${ext}`;
-      const { error: upErr } = await supabase.storage
-        .from("product-images")
-        .upload(path, file, { upsert: false, contentType: file.type });
-      if (upErr) {
-        toast.error(upErr.message);
-        continue;
+      try {
+        urls.push(await uploadToStorage(file, imagePath(`${rowId}-extra`, file)));
+      } catch (e) {
+        toast.error((e as Error).message);
       }
-      urls.push(supabase.storage.from("product-images").getPublicUrl(path).data.publicUrl);
     }
     if (urls.length === 0) {
       setSavingId(null);
@@ -839,6 +840,12 @@ function AdminDashboard() {
         <VisitorStat />
 
         {/* Category icons */}
+        <RibbonPanel />
+
+        <HeroSlidesPanel />
+
+        <SocialLinksPanel />
+
         <CategoriesPanel />
 
         {/* Orders */}
@@ -906,6 +913,30 @@ function AdminDashboard() {
                       <input value={row.category} onChange={(e) => update(row.id, { category: e.target.value })} placeholder="Category" className="h-11 rounded-full border border-input bg-background px-4 text-sm outline-none focus:border-accent" />
                       <input value={row.tagline} onChange={(e) => update(row.id, { tagline: e.target.value })} placeholder="Tagline" className="h-11 sm:col-span-2 rounded-full border border-input bg-background px-4 text-sm outline-none focus:border-accent" />
                       <input type="number" value={row.sort_order} onChange={(e) => update(row.id, { sort_order: Number(e.target.value) || 0 })} placeholder="Sort order" className="h-11 rounded-full border border-input bg-background px-4 text-sm outline-none focus:border-accent" />
+                      <input type="number" value={row.discount_percent ?? ""} onChange={(e) => update(row.id, { discount_percent: e.target.value === "" ? null : Number(e.target.value) })} placeholder="Discount % (blank = auto)" className="h-11 rounded-full border border-input bg-background px-4 text-sm outline-none focus:border-accent" />
+                      <input value={row.category_slug ?? ""} onChange={(e) => update(row.id, { category_slug: e.target.value })} placeholder="Category icon slug (e.g. airpods)" className="h-11 sm:col-span-2 rounded-full border border-input bg-background px-4 text-sm outline-none focus:border-accent" />
+                      <div className="sm:col-span-2 flex flex-wrap items-center gap-3">
+                        <span className="text-xs font-bold uppercase tracking-widest text-muted-foreground">Show in rows:</span>
+                        {SECTION_OPTIONS.map((s) => {
+                          const on = (row.sections ?? []).includes(s.key);
+                          return (
+                            <label key={s.key} className="inline-flex items-center gap-1.5 text-sm">
+                              <input
+                                type="checkbox"
+                                checked={on}
+                                onChange={() =>
+                                  update(row.id, {
+                                    sections: on
+                                      ? (row.sections ?? []).filter((x) => x !== s.key)
+                                      : [...(row.sections ?? []), s.key],
+                                  })
+                                }
+                              />
+                              {s.label}
+                            </label>
+                          );
+                        })}
+                      </div>
                     </div>
                   </div>
                   <textarea value={row.description} onChange={(e) => update(row.id, { description: e.target.value })} placeholder="Description" className="w-full min-h-20 rounded-2xl border border-input bg-background p-3 text-sm outline-none focus:border-accent" />
