@@ -114,7 +114,7 @@ export function StoreNav() {
   const [open, setOpen] = useState(false);
   const { count } = useCart();
   const { categories } = useCategories();
-  const links = categories.slice(0, 5).map((c) => ({ label: c.label, slug: c.link_slug }));
+  const links = categories.slice(0, 6).map((c) => ({ label: c.label, slug: c.slug }));
 
   return (
     <nav className="sticky top-0 z-40 bg-background/95 backdrop-blur-xl border-b border-border">
@@ -142,7 +142,7 @@ export function StoreNav() {
           <div className="flex flex-col gap-3 text-sm font-semibold text-foreground/80">
             <Link to="/" preload="intent" onClick={() => setOpen(false)} className="py-1 hover:text-accent">Home</Link>
             {links.map((l) => (
-              <Link key={l.label} to="/product/$slug" params={{ slug: l.slug }} preload="intent" onClick={() => setOpen(false)} className="py-1 hover:text-accent">
+              <Link key={l.label} to="/category/$slug" params={{ slug: l.slug }} preload="intent" onClick={() => setOpen(false)} className="py-1 hover:text-accent">
                 {l.label}
               </Link>
             ))}
