@@ -66,6 +66,7 @@ export type HeroSlide = {
   badge: string | null;
   image_url: string | null;
   link_slug: string | null;
+  link_url: string | null;
   sort_order: number;
   active: boolean;
 };
