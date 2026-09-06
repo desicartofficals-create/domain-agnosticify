@@ -222,6 +222,8 @@ export function ProductReviews({ productSlug }: { productSlug: string }) {
               {r.image_url && (
                 <a href={r.image_url} target="_blank" rel="noopener noreferrer" className="inline-block">
                   <img
+                    loading="lazy"
+                    decoding="async"
                     src={r.image_url}
                     alt={`${r.customer_name}'s review photo`}
                     loading="lazy"

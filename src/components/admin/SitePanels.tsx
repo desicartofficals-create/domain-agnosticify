@@ -139,7 +139,7 @@ export function HeroSlidesPanel() {
   const slides = useHeroSlides(false);
   const [rows, setRows] = useState<HeroSlide[]>([]);
   const [busyId, setBusyId] = useState<string | null>(null);
-  const [newSlide, setNewSlide] = useState({ title: "", subtitle: "", link_slug: "" });
+  const [newSlide, setNewSlide] = useState({ title: "", link_slug: "", link_url: "" });
 
   useEffect(() => setRows(slides), [slides]);
 
@@ -149,11 +149,12 @@ export function HeroSlidesPanel() {
     setBusyId(row.id);
     const { error } = await supabase.from("hero_slides").update({
       title: row.title, subtitle: row.subtitle, badge: row.badge,
-      link_slug: row.link_slug, sort_order: row.sort_order, active: row.active, image_url: row.image_url,
+      link_slug: row.link_slug || null, link_url: row.link_url || null,
+      sort_order: row.sort_order, active: row.active, image_url: row.image_url,
     }).eq("id", row.id);
     setBusyId(null);
     if (error) toast.error(error.message);
-    else toast.success("Slide saved.");
+    else toast.success("Banner saved.");
   };
 
   const upload = async (row: HeroSlide, file: File) => {
@@ -163,7 +164,7 @@ export function HeroSlidesPanel() {
       const { error } = await supabase.from("hero_slides").update({ image_url: url }).eq("id", row.id);
       if (error) throw error;
       update(row.id, { image_url: url });
-      toast.success("Slide image updated.");
+      toast.success("Banner image updated.");
     } catch (e) {
       toast.error((e as Error).message);
     } finally {
@@ -172,10 +173,10 @@ export function HeroSlidesPanel() {
   };
 
   const remove = async (row: HeroSlide) => {
-    if (!confirm("Delete this slide?")) return;
+    if (!confirm("Delete this banner?")) return;
     const { error } = await supabase.from("hero_slides").delete().eq("id", row.id);
     if (error) toast.error(error.message);
-    else toast.success("Slide deleted.");
+    else toast.success("Banner deleted.");
   };
 
   const create = async (e: FormEvent) => {
@@ -183,14 +184,14 @@ export function HeroSlidesPanel() {
     const maxSort = rows.reduce((m, r) => Math.max(m, r.sort_order), 0);
     const { error } = await supabase.from("hero_slides").insert({
       title: newSlide.title.trim(),
-      subtitle: newSlide.subtitle.trim(),
       link_slug: newSlide.link_slug.trim() || null,
+      link_url: newSlide.link_url.trim() || null,
       sort_order: maxSort + 1,
     });
     if (error) toast.error(error.message);
     else {
-      toast.success("Slide added.");
-      setNewSlide({ title: "", subtitle: "", link_slug: "" });
+      toast.success("Banner added — now upload its image.");
+      setNewSlide({ title: "", link_slug: "", link_url: "" });
     }
   };
 
@@ -199,33 +200,39 @@ export function HeroSlidesPanel() {
       <div className="flex items-center gap-3">
         <Images className="h-6 w-6 text-accent" />
         <div>
-          <h2 className="font-display text-2xl font-black">Hero slideshow</h2>
-          <p className="text-xs text-muted-foreground">Hand-pick the products shown at the top. The background colour is taken from each photo automatically.</p>
+          <h2 className="font-display text-2xl font-black">Homepage banners</h2>
+          <p className="text-xs text-muted-foreground">
+            Upload a full-width banner image for each slide and choose where it goes when someone clicks it.
+            Use a product slug, or paste a link such as <code>/category/earbuds</code> or a full web address.
+          </p>
         </div>
       </div>
 
       <div className="grid gap-3">
         {rows.map((row) => (
-          <div key={row.id} className="rounded-2xl border border-border bg-background p-4 flex flex-col sm:flex-row gap-3">
-            <div className="relative h-20 w-20 shrink-0 rounded-xl bg-secondary overflow-hidden flex items-center justify-center border border-border">
-              {row.image_url ? <img src={row.image_url} alt="" className="w-3/4 h-3/4 object-contain" /> : <span className="text-[10px] text-muted-foreground text-center px-1">Uses product photo</span>}
-              <label className="absolute inset-0 bg-black/60 opacity-0 hover:opacity-100 transition flex items-center justify-center cursor-pointer text-white text-[10px] font-bold gap-1">
-                <Upload className="h-3.5 w-3.5" /> Change
+          <div key={row.id} className="rounded-2xl border border-border bg-background p-4 flex flex-col lg:flex-row gap-3">
+            <div className="relative w-full lg:w-64 shrink-0 aspect-[21/9] rounded-xl bg-secondary overflow-hidden flex items-center justify-center border border-border">
+              {row.image_url ? (
+                <img src={row.image_url} alt="" loading="lazy" className="w-full h-full object-cover" />
+              ) : (
+                <span className="text-[10px] text-muted-foreground text-center px-2">No banner image yet</span>
+              )}
+              <label className="absolute inset-0 bg-black/60 opacity-0 hover:opacity-100 transition flex items-center justify-center cursor-pointer text-white text-[11px] font-bold gap-1">
+                <Upload className="h-3.5 w-3.5" /> Upload banner
                 <input type="file" accept="image/*" className="hidden" onChange={(e) => { const f = e.target.files?.[0]; if (f) upload(row, f); e.target.value = ""; }} />
               </label>
             </div>
             <div className="flex-1 grid gap-2 sm:grid-cols-2">
-              <input className={input} value={row.title} onChange={(e) => update(row.id, { title: e.target.value })} placeholder="Headline" />
-              <input className={input} value={row.subtitle} onChange={(e) => update(row.id, { subtitle: e.target.value })} placeholder="Sub headline" />
-              <input className={input} value={row.badge ?? ""} onChange={(e) => update(row.id, { badge: e.target.value })} placeholder="Badge (e.g. Best Seller)" />
-              <input className={input} value={row.link_slug ?? ""} onChange={(e) => update(row.id, { link_slug: e.target.value })} placeholder="Product slug to link" />
+              <input className={input} value={row.title} onChange={(e) => update(row.id, { title: e.target.value })} placeholder="Name / image description" />
+              <input className={input} value={row.link_slug ?? ""} onChange={(e) => update(row.id, { link_slug: e.target.value })} placeholder="Product slug to open (optional)" />
+              <input className={input} value={row.link_url ?? ""} onChange={(e) => update(row.id, { link_url: e.target.value })} placeholder="Or a link, e.g. /category/earbuds" />
               <input className={input} type="number" value={row.sort_order} onChange={(e) => update(row.id, { sort_order: Number(e.target.value) || 0 })} placeholder="Order" />
               <select className={input} value={row.active ? "true" : "false"} onChange={(e) => update(row.id, { active: e.target.value === "true" })}>
                 <option value="true">Visible</option>
                 <option value="false">Hidden</option>
               </select>
             </div>
-            <div className="flex sm:flex-col gap-2 shrink-0">
+            <div className="flex lg:flex-col gap-2 shrink-0">
               <button onClick={() => save(row)} disabled={busyId === row.id} className="rounded-full bg-accent text-accent-foreground px-4 py-2 text-xs font-bold inline-flex items-center gap-1.5 disabled:opacity-50">
                 {busyId === row.id ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Save className="h-3.5 w-3.5" />} Save
               </button>
@@ -238,11 +245,11 @@ export function HeroSlidesPanel() {
       </div>
 
       <form onSubmit={create} className="grid gap-2 sm:grid-cols-4 pt-3 border-t border-border">
-        <input className={input} placeholder="Headline" value={newSlide.title} onChange={(e) => setNewSlide({ ...newSlide, title: e.target.value })} />
-        <input className={input} placeholder="Sub headline" value={newSlide.subtitle} onChange={(e) => setNewSlide({ ...newSlide, subtitle: e.target.value })} />
-        <input className={input} placeholder="Product slug" value={newSlide.link_slug} onChange={(e) => setNewSlide({ ...newSlide, link_slug: e.target.value })} />
+        <input className={input} placeholder="Banner name" value={newSlide.title} onChange={(e) => setNewSlide({ ...newSlide, title: e.target.value })} />
+        <input className={input} placeholder="Product slug (optional)" value={newSlide.link_slug} onChange={(e) => setNewSlide({ ...newSlide, link_slug: e.target.value })} />
+        <input className={input} placeholder="Or link, e.g. /category/earbuds" value={newSlide.link_url} onChange={(e) => setNewSlide({ ...newSlide, link_url: e.target.value })} />
         <button className="h-10 rounded-full bg-foreground text-background text-xs font-bold inline-flex items-center justify-center gap-1.5">
-          <Plus className="h-3.5 w-3.5" /> Add slide
+          <Plus className="h-3.5 w-3.5" /> Add banner
         </button>
       </form>
     </div>
