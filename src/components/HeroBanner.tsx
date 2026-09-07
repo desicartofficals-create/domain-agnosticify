@@ -10,6 +10,8 @@ export type Banner = {
   slug: string | null;
   /** Any other destination (absolute URL or site path). Used when slug is empty. */
   url: string | null;
+  /** "cover" for a real uploaded banner, "contain" when falling back to a product photo. */
+  fit: "cover" | "contain";
 };
 
 function BannerLink({ banner, children }: { banner: Banner; children: ReactNode }) {
@@ -62,7 +64,7 @@ export function HeroBanner({ banners }: { banners: Banner[] }) {
           loading="eager"
           decoding="async"
           fetchPriority="high"
-          className="w-full h-auto object-cover aspect-[16/7] sm:aspect-[21/7]"
+          className={`w-full aspect-[16/7] sm:aspect-[21/7] ${active.fit === "cover" ? "object-cover" : "object-contain p-6 sm:p-10"}`}
         />
       </BannerLink>
 

@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import { createLiveStore } from "@/lib/live-store";
 
 export type SettingsMap = Record<string, string>;
 
@@ -26,34 +27,27 @@ export const DEFAULT_SETTINGS: SettingsMap = {
   urgency_timer_minutes: "1440",
 };
 
+const settingsStore = createLiveStore<SettingsMap>(
+  "site_settings",
+  "site_settings",
+  async () => {
+    const { data, error } = await supabase.from("site_settings").select("key,value");
+    if (error) throw error;
+    const map: SettingsMap = { ...DEFAULT_SETTINGS };
+    for (const row of (data ?? []) as { key: string; value: string }[]) map[row.key] = row.value;
+    return map;
+  },
+  DEFAULT_SETTINGS,
+);
+
 /** Reads all editable site settings; updates live for every visitor. */
 export function useSiteSettings() {
-  const [settings, setSettings] = useState<SettingsMap>(DEFAULT_SETTINGS);
-
-  useEffect(() => {
-    let active = true;
-    const load = async () => {
-      const { data } = await supabase.from("site_settings").select("key,value");
-      if (!active || !data) return;
-      const map: SettingsMap = { ...DEFAULT_SETTINGS };
-      for (const row of data as { key: string; value: string }[]) map[row.key] = row.value;
-      setSettings(map);
-    };
-    load();
-    const ch = supabase
-      .channel(`site-settings-${Math.random().toString(36).slice(2)}`)
-      .on("postgres_changes", { event: "*", schema: "public", table: "site_settings" }, () => load())
-      .subscribe();
-    return () => {
-      active = false;
-      supabase.removeChannel(ch);
-    };
-  }, []);
+  const { data: settings } = settingsStore.useStore();
 
   const saveSetting = useCallback(async (key: string, value: string) => {
     const { error } = await supabase.from("site_settings").upsert({ key, value }, { onConflict: "key" });
     if (error) throw error;
-    setSettings((s) => ({ ...s, [key]: value }));
+    await settingsStore.reload();
   }, []);
 
   return { settings, saveSetting };
@@ -71,64 +65,46 @@ export type HeroSlide = {
   active: boolean;
 };
 
+const heroStore = createLiveStore<HeroSlide[]>(
+  "hero_slides",
+  "hero_slides",
+  async () => {
+    const { data, error } = await supabase.from("hero_slides").select("*").order("sort_order", { ascending: true });
+    if (error) throw error;
+    return (data as HeroSlide[]) ?? [];
+  },
+  [],
+);
+
 export function useHeroSlides(onlyActive = true) {
-  const [slides, setSlides] = useState<HeroSlide[]>([]);
-
-  useEffect(() => {
-    let active = true;
-    const load = async () => {
-      let q = supabase.from("hero_slides").select("*").order("sort_order", { ascending: true });
-      if (onlyActive) q = q.eq("active", true);
-      const { data } = await q;
-      if (active) setSlides((data as HeroSlide[]) ?? []);
-    };
-    load();
-    const ch = supabase
-      .channel(`hero-slides-${onlyActive ? "public" : "admin"}-${Math.random().toString(36).slice(2)}`)
-      .on("postgres_changes", { event: "*", schema: "public", table: "hero_slides" }, () => load())
-      .subscribe();
-    return () => {
-      active = false;
-      supabase.removeChannel(ch);
-    };
-  }, [onlyActive]);
-
-  return slides;
+  const { data } = heroStore.useStore();
+  return onlyActive ? data.filter((s) => s.active) : data;
 }
 
 export type RatingStat = { avg: number; count: number };
 
+const ratingsStore = createLiveStore<Record<string, RatingStat>>(
+  "review-ratings",
+  "reviews",
+  async () => {
+    const { data, error } = await supabase.from("reviews").select("product_slug,rating").limit(5000);
+    if (error) throw error;
+    const tally: Record<string, { sum: number; count: number }> = {};
+    for (const r of (data ?? []) as { product_slug: string; rating: number }[]) {
+      const t = (tally[r.product_slug] ??= { sum: 0, count: 0 });
+      t.sum += r.rating;
+      t.count += 1;
+    }
+    const out: Record<string, RatingStat> = {};
+    for (const [slug, t] of Object.entries(tally)) out[slug] = { avg: t.sum / t.count, count: t.count };
+    return out;
+  },
+  {},
+);
+
 /** Real star ratings, aggregated per product slug from the reviews table. */
 export function useProductRatings() {
-  const [ratings, setRatings] = useState<Record<string, RatingStat>>({});
-
-  useEffect(() => {
-    let active = true;
-    const load = async () => {
-      const { data } = await supabase.from("reviews").select("product_slug,rating").limit(5000);
-      if (!active || !data) return;
-      const tally: Record<string, { sum: number; count: number }> = {};
-      for (const r of data as { product_slug: string; rating: number }[]) {
-        const t = (tally[r.product_slug] ??= { sum: 0, count: 0 });
-        t.sum += r.rating;
-        t.count += 1;
-      }
-      const out: Record<string, RatingStat> = {};
-      for (const [slug, t] of Object.entries(tally)) out[slug] = { avg: t.sum / t.count, count: t.count };
-      setRatings(out);
-    };
-    load();
-    const ch = supabase
-      .channel(`reviews-ratings-${Math.random().toString(36).slice(2)}`)
-      .on("postgres_changes", { event: "*", schema: "public", table: "reviews" }, () => load())
-      .subscribe();
-    return () => {
-      active = false;
-      supabase.removeChannel(ch);
-    };
-  }, []);
-
-  return ratings;
+  return ratingsStore.useStore().data;
 }
 
 /** Milliseconds remaining until an ISO date, ticking every second. */
