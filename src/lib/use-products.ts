@@ -82,33 +82,23 @@ export type Category = {
   sort_order: number;
 };
 
+const categoriesStore = createLiveStore<Category[]>(
+  "categories",
+  "categories",
+  async () => {
+    const { data, error } = await supabase
+      .from("categories")
+      .select("id,slug,label,image_url,link_slug,sort_order")
+      .order("sort_order", { ascending: true });
+    if (error) throw error;
+    return (data as Category[]) ?? [];
+  },
+  [],
+);
+
 export function useCategories() {
-  const [categories, setCategories] = useState<Category[]>([]);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    let active = true;
-    const load = async () => {
-      const { data } = await supabase
-        .from("categories")
-        .select("id,slug,label,image_url,link_slug,sort_order")
-        .order("sort_order", { ascending: true });
-      if (!active) return;
-      setCategories((data as Category[]) ?? []);
-      setLoading(false);
-    };
-    load();
-    const ch = supabase
-      .channel(`categories-changes-${Math.random().toString(36).slice(2)}`)
-      .on("postgres_changes", { event: "*", schema: "public", table: "categories" }, () => load())
-      .subscribe();
-    return () => {
-      active = false;
-      supabase.removeChannel(ch);
-    };
-  }, []);
-
-  return { categories, loading };
+  const { data, loading } = categoriesStore.useStore();
+  return { categories: data, loading };
 }
 
 export function useVisitorCount() {
