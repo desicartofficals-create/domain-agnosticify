@@ -48,73 +48,28 @@ function mapRow(r: DbRow): Product {
 }
 
 
+const productsStore = createLiveStore<Product[]>(
+  "products",
+  "products",
+  async () => {
+    const { data, error } = await supabase
+      .from("products")
+      .select(SELECT_COLS)
+      .order("sort_order", { ascending: true });
+    if (error) throw error;
+    return (data as DbRow[]).map(mapRow);
+  },
+  [],
+);
+
 export function useProducts() {
-  const [products, setProducts] = useState<Product[]>([]);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    let active = true;
-    const load = async () => {
-      const { data, error } = await supabase
-        .from("products")
-        .select(SELECT_COLS)
-        .order("sort_order", { ascending: true });
-      if (!active) return;
-      if (error) {
-        console.error("Failed to load products:", error);
-        setProducts([]);
-      } else {
-        setProducts((data as DbRow[]).map(mapRow));
-      }
-      setLoading(false);
-    };
-    load();
-
-    // Realtime: any change in products refreshes the list instantly
-    const channel = supabase
-      .channel(`products-changes-${Math.random().toString(36).slice(2)}`)
-      .on("postgres_changes", { event: "*", schema: "public", table: "products" }, () => load())
-      .subscribe();
-
-    return () => {
-      active = false;
-      supabase.removeChannel(channel);
-    };
-  }, []);
-
-  return { products, loading };
+  const { data, loading } = productsStore.useStore();
+  return { products: data, loading };
 }
 
 export function useProduct(slug: string) {
-  const [product, setProduct] = useState<Product | null>(null);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    let active = true;
-    const load = async () => {
-      const { data, error } = await supabase
-        .from("products")
-        .select(SELECT_COLS)
-        .eq("slug", slug)
-        .maybeSingle();
-      if (!active) return;
-      if (error) console.error(error);
-      setProduct(data ? mapRow(data as DbRow) : null);
-      setLoading(false);
-    };
-    load();
-
-    const channel = supabase
-      .channel(`product-${slug}-${Math.random().toString(36).slice(2)}`)
-      .on("postgres_changes", { event: "*", schema: "public", table: "products", filter: `slug=eq.${slug}` }, () => load())
-      .subscribe();
-
-    return () => {
-      active = false;
-      supabase.removeChannel(channel);
-    };
-  }, [slug]);
-
+  const { products, loading } = useProducts();
+  const product = useMemo(() => products.find((p) => p.slug === slug) ?? null, [products, slug]);
   return { product, loading };
 }
 
