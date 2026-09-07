@@ -55,7 +55,9 @@ export function ProductCard({ product, rating }: { product: Product; rating?: Ra
             className="w-3/4 h-3/4 object-contain group-hover:scale-110 transition-transform duration-500"
           />
         </div>
-        <h3 className="font-display text-sm sm:text-lg font-bold text-foreground leading-tight line-clamp-2">{product.name}</h3>
+        <h3 className="font-display text-sm sm:text-lg font-bold text-foreground leading-tight line-clamp-2 min-h-[2.5rem] sm:min-h-[3.25rem]">
+          {product.name}
+        </h3>
       </Link>
 
       <div className="mt-1.5 flex items-center gap-1.5">
@@ -65,34 +67,33 @@ export function ProductCard({ product, rating }: { product: Product; rating?: Ra
         </span>
       </div>
 
-      {colors.length > 0 && (
-        <div className="mt-2 flex flex-wrap gap-1.5">
-          {colors.slice(0, 6).map((c) => {
-            const selected = (color ?? colors[0]) === c;
-            return (
-              <button
-                key={c}
-                type="button"
-                onClick={() => setColor(c)}
-                aria-label={c}
-                title={c}
-                className={`h-5 w-5 rounded-full border-2 transition-transform ${selected ? "border-accent scale-110" : "border-border"}`}
-                style={{ background: swatchColor(c) }}
-              />
-            );
-          })}
-        </div>
-      )}
+      <div className="mt-2 min-h-[1.25rem] flex flex-wrap gap-1.5">
+        {colors.slice(0, 6).map((c) => {
+          const selected = (color ?? colors[0]) === c;
+          return (
+            <button
+              key={c}
+              type="button"
+              onClick={() => setColor(c)}
+              aria-label={c}
+              title={c}
+              className={`h-5 w-5 rounded-full border-2 transition-transform ${selected ? "border-accent scale-110" : "border-border"}`}
+              style={{ background: swatchColor(c) }}
+            />
+          );
+        })}
+      </div>
 
-      <div className="mt-2 flex items-baseline gap-2">
-        {product.oldPrice && <span className="text-xs sm:text-sm text-muted-foreground line-through">{product.oldPrice}</span>}
+      <div className="mt-auto pt-2 flex items-baseline gap-2">
+        {product.oldPrice && (
+          <span className="text-xs sm:text-sm text-muted-foreground line-through">{product.oldPrice}</span>
+        )}
         <span className="font-display text-base sm:text-xl font-black text-foreground">{product.price}</span>
       </div>
 
       <Link
         to="/product/$slug"
         params={{ slug: product.slug }}
-        search={colors.length > 0 ? undefined : undefined}
         preload="intent"
         className="mt-3 h-10 rounded-full bg-black text-white text-xs sm:text-sm font-bold flex items-center justify-center hover:bg-accent transition-colors"
       >
