@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import { createLiveStore } from "@/lib/live-store";
 
 export type SettingsMap = Record<string, string>;
 
