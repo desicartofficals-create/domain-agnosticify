@@ -158,6 +158,7 @@ function Index() {
           alt: s.title || p?.name || "DesiCart banner",
           slug: s.link_slug ?? null,
           url: s.link_url ?? null,
+          fit: s.image_url ? "cover" : "contain",
         } satisfies Banner;
       })
       .filter(Boolean) as Banner[];
