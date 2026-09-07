@@ -1,6 +1,7 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { fallbackImageBySlug, placeholderImg, type Product } from "@/lib/products";
+import { createLiveStore } from "@/lib/live-store";
 
 type DbRow = {
   slug: string;
