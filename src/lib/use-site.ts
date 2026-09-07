@@ -26,34 +26,27 @@ export const DEFAULT_SETTINGS: SettingsMap = {
   urgency_timer_minutes: "1440",
 };
 
+const settingsStore = createLiveStore<SettingsMap>(
+  "site_settings",
+  "site_settings",
+  async () => {
+    const { data, error } = await supabase.from("site_settings").select("key,value");
+    if (error) throw error;
+    const map: SettingsMap = { ...DEFAULT_SETTINGS };
+    for (const row of (data ?? []) as { key: string; value: string }[]) map[row.key] = row.value;
+    return map;
+  },
+  DEFAULT_SETTINGS,
+);
+
 /** Reads all editable site settings; updates live for every visitor. */
 export function useSiteSettings() {
-  const [settings, setSettings] = useState<SettingsMap>(DEFAULT_SETTINGS);
-
-  useEffect(() => {
-    let active = true;
-    const load = async () => {
-      const { data } = await supabase.from("site_settings").select("key,value");
-      if (!active || !data) return;
-      const map: SettingsMap = { ...DEFAULT_SETTINGS };
-      for (const row of data as { key: string; value: string }[]) map[row.key] = row.value;
-      setSettings(map);
-    };
-    load();
-    const ch = supabase
-      .channel(`site-settings-${Math.random().toString(36).slice(2)}`)
-      .on("postgres_changes", { event: "*", schema: "public", table: "site_settings" }, () => load())
-      .subscribe();
-    return () => {
-      active = false;
-      supabase.removeChannel(ch);
-    };
-  }, []);
+  const { data: settings } = settingsStore.useStore();
 
   const saveSetting = useCallback(async (key: string, value: string) => {
     const { error } = await supabase.from("site_settings").upsert({ key, value }, { onConflict: "key" });
     if (error) throw error;
-    setSettings((s) => ({ ...s, [key]: value }));
+    await settingsStore.reload();
   }, []);
 
   return { settings, saveSetting };
