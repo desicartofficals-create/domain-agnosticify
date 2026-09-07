@@ -226,7 +226,6 @@ export function ProductReviews({ productSlug }: { productSlug: string }) {
                     decoding="async"
                     src={r.image_url}
                     alt={`${r.customer_name}'s review photo`}
-                    loading="lazy"
                     className="mt-1 h-24 w-24 rounded-lg object-cover border border-border hover:opacity-90"
                   />
                 </a>
