@@ -39,9 +39,27 @@ if (!entryFile) {
   process.exit(1);
 }
 
-const cssLinks = allFiles
-  .filter((file) => file.endsWith(".css"))
-  .map((href) => `    <link rel="stylesheet" href="/${href}">`)
+const cssFiles = allFiles.filter((file) => file.endsWith(".css"));
+
+// Preload + stylesheet: the browser starts the CSS download in the very first
+// bytes of the document and paints styled content without waiting for React.
+const cssLinks = cssFiles
+  .map(
+    (href) =>
+      `    <link rel="preload" as="style" href="/${href}">\n    <link rel="stylesheet" href="/${href}">`,
+  )
+  .join("\n");
+
+// Warm up the JS chunks the first screen always needs, in parallel with the
+// entry script, instead of discovering them one waterfall step at a time.
+const preloadChunks = allFiles.filter(
+  (file) =>
+    file !== entryFile &&
+    file.endsWith(".js") &&
+    /assets\/(vendor-supabase|vendor-icons)/.test(file),
+);
+const modulePreloads = [entryFile, ...preloadChunks]
+  .map((href) => `    <link rel="modulepreload" href="/${href}">`)
   .join("\n");
 
 const indexHtml = `<!doctype html>
@@ -64,12 +82,33 @@ const indexHtml = `<!doctype html>
     <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Montserrat:wght@700;800;900&display=swap">
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Montserrat:wght@700;800;900&display=swap" media="print" onload="this.media='all'">
 ${cssLinks}
+${modulePreloads}
+    <style>
+      html,body{margin:0;background:#faf8f5}
+      #dc-boot{position:fixed;inset:0;z-index:2147483647;display:flex;align-items:center;justify-content:center;background:#faf8f5}
+      #dc-boot .r{width:44px;height:44px;border-radius:50%;border:3px solid rgba(234,124,26,.2);border-top-color:#ea7c1a;animation:dcspin .8s linear infinite}
+      @keyframes dcspin{to{transform:rotate(360deg)}}
+    </style>
     <script type="module" src="/${entryFile}"></script>
   </head>
   <body>
     <script>window.$_TSR={router:{matches:[],manifest:{routes:[]},dehydratedData:{}},matches:[],buffer:[],h:function(){}};</script>
+    <script>
+      (function () {
+        var el = document.createElement("div");
+        el.id = "dc-boot";
+        el.innerHTML = '<div class="r"></div>';
+        document.documentElement.appendChild(el);
+        var done = function () { if (el && el.parentNode) el.parentNode.removeChild(el); };
+        var obs = new MutationObserver(function () {
+          if (document.body && document.body.querySelector("main,header,nav")) { obs.disconnect(); done(); }
+        });
+        if (document.body) obs.observe(document.body, { childList: true, subtree: true });
+        setTimeout(function () { obs.disconnect(); done(); }, 12000);
+      })();
+    </script>
   </body>
 </html>
 `;
