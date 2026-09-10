@@ -134,7 +134,7 @@ function ProductPage() {
         <div className="grid md:grid-cols-2 gap-8 md:gap-12 items-start">
           {/* Gallery — hover or tap a thumbnail to swap the main photo instantly */}
           <div className="space-y-3">
-            <div className="relative rounded-2xl sm:rounded-3xl aspect-square w-full bg-secondary flex items-center justify-center overflow-hidden">
+            <div className="relative rounded-2xl sm:rounded-3xl aspect-square w-full bg-secondary overflow-hidden">
               {product.tag && (
                 <span className="absolute top-4 left-4 z-10 text-[10px] uppercase tracking-widest font-bold bg-foreground text-background px-3 py-1.5 rounded-full">{product.tag}</span>
               )}
@@ -148,11 +148,11 @@ function ProductPage() {
                 height={1000}
                 loading="eager"
                 fetchPriority="high"
-                className="relative z-[1] w-4/5 h-4/5 object-contain drop-shadow-2xl"
+                className="absolute inset-0 z-[1] w-full h-full object-cover object-center"
               />
             </div>
             {gallery.length > 1 && (
-              <div className="flex gap-2 overflow-x-auto pb-1">
+              <div className="grid grid-cols-4 sm:grid-cols-5 gap-2">
                 {gallery.map((src) => (
                   <button
                     key={src}
@@ -161,11 +161,11 @@ function ProductPage() {
                     onFocus={() => setActiveImg(src)}
                     onClick={() => setActiveImg(src)}
                     aria-label="Show this photo"
-                    className={`shrink-0 h-16 w-16 sm:h-20 sm:w-20 rounded-xl bg-secondary flex items-center justify-center overflow-hidden border-2 transition-colors ${
+                    className={`relative aspect-square w-full rounded-xl bg-secondary overflow-hidden border-2 transition-colors ${
                       currentImg === src ? "border-accent" : "border-transparent hover:border-border"
                     }`}
                   >
-                    <img src={src} alt="" loading="lazy" className="w-4/5 h-4/5 object-contain" />
+                    <img src={src} alt="" loading="lazy" className="absolute inset-0 w-full h-full object-cover object-center" />
                   </button>
                 ))}
               </div>

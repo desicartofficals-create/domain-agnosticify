@@ -21,6 +21,7 @@ import { createServer } from "node:http";
 import { createReadStream, existsSync, statSync } from "node:fs";
 import { extname, join, normalize, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
+import { createGzip, createBrotliCompress } from "node:zlib";
 
 const projectRoot = resolve(fileURLToPath(new URL(".", import.meta.url)));
 const distDir = join(projectRoot, "dist");
@@ -58,22 +59,45 @@ function tryStaticFile(urlPath) {
   }
 }
 
-function sendFile(res, filePath, cache) {
+const COMPRESSIBLE = /^(text\/|application\/(javascript|json|xml)|image\/svg)/;
+
+function sendFile(res, req, filePath, cache) {
   const type = mime[extname(filePath).toLowerCase()] || "application/octet-stream";
-  res.writeHead(200, {
+  const headers = {
     "content-type": type,
     "cache-control": cache || "public, max-age=31536000, immutable",
-  });
-  createReadStream(filePath).pipe(res);
+    vary: "Accept-Encoding",
+  };
+
+  const accept = String((req && req.headers && req.headers["accept-encoding"]) || "");
+  const stream = createReadStream(filePath);
+
+  if (COMPRESSIBLE.test(type)) {
+    if (/\bbr\b/.test(accept)) {
+      headers["content-encoding"] = "br";
+      res.writeHead(200, headers);
+      stream.pipe(createBrotliCompress()).pipe(res);
+      return;
+    }
+    if (/\bgzip\b/.test(accept)) {
+      headers["content-encoding"] = "gzip";
+      res.writeHead(200, headers);
+      stream.pipe(createGzip()).pipe(res);
+      return;
+    }
+  }
+
+  res.writeHead(200, headers);
+  stream.pipe(res);
 }
 
-function sendIndex(res) {
+function sendIndex(res, req) {
   if (!existsSync(indexHtml)) {
     res.writeHead(500, { "content-type": "text/plain; charset=utf-8" });
     res.end("Build output missing. Run `npm run build`, then restart the Node.js app.");
     return;
   }
-  sendFile(res, indexHtml, "no-cache");
+  sendFile(res, req, indexHtml, "no-cache");
 }
 
 const server = createServer((req, res) => {
@@ -82,19 +106,19 @@ const server = createServer((req, res) => {
 
     // 1) Root -> index.html (no aggressive cache so updates go live).
     if (urlPath === "/" || urlPath === "/index.html") {
-      sendIndex(res);
+      sendIndex(res, req);
       return;
     }
 
     // 2) Any real file in dist/ (JS, CSS, images, favicon, fonts, etc.).
     const staticFile = tryStaticFile(urlPath);
     if (staticFile) {
-      sendFile(res, staticFile);
+      sendFile(res, req, staticFile);
       return;
     }
 
     // 3) SPA fallback: unknown route -> index.html for the client router.
-    sendIndex(res);
+    sendIndex(res, req);
   } catch (err) {
     console.error("Request failed:", err);
     if (!res.headersSent) {

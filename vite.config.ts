@@ -14,5 +14,26 @@ export default defineConfig({
   // specific hostname. This lets the same dist/ run on any domain.
   vite: {
     base: "/",
+    environments: {
+      client: {
+        build: {
+          rollupOptions: {
+            output: {
+              // Split heavy third-party libs out of the initial entry chunk so the
+              // first paint only downloads React + the homepage code.
+              manualChunks(id: string) {
+                if (!id.includes("node_modules")) return;
+                if (id.includes("recharts") || id.includes("d3-")) return "vendor-charts";
+                if (id.includes("lucide-react")) return "vendor-icons";
+                if (id.includes("@supabase")) return "vendor-supabase";
+                if (id.includes("@radix-ui") || id.includes("cmdk") || id.includes("vaul")) return "vendor-ui";
+                if (id.includes("embla-carousel") || id.includes("react-day-picker") || id.includes("date-fns")) return "vendor-misc";
+                return;
+              },
+            },
+          },
+        },
+      },
+    },
   },
 });
