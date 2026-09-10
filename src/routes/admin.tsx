@@ -197,7 +197,8 @@ function CategoriesPanel() {
         <div className="grid gap-3">
           {rows.map((row) => (
             <div key={row.id} className="rounded-2xl border border-border bg-background p-4 flex flex-col sm:flex-row gap-3 items-start">
-              <div className="relative h-20 w-20 shrink-0 rounded-full bg-secondary overflow-hidden flex items-center justify-center border border-border">
+              <div className="shrink-0 space-y-1">
+              <div className="relative h-20 w-20 rounded-full bg-secondary overflow-hidden flex items-center justify-center border border-border">
                 {row.image_url ? (
                   <img src={row.image_url} alt={row.label} className="w-3/4 h-3/4 object-contain" />
                 ) : (
@@ -209,6 +210,8 @@ function CategoriesPanel() {
                     const f = e.target.files?.[0]; if (f) uploadIcon(row.id, f); e.target.value = "";
                   }} />
                 </label>
+              </div>
+                <p className="max-w-[9rem] text-[10px] leading-tight text-muted-foreground">Recommended optimal dimensions: 1000 x 1000 pixels (1:1 aspect ratio).</p>
               </div>
               <div className="flex-1 grid gap-2 sm:grid-cols-2 w-full">
                 <input value={row.label} onChange={(e) => update(row.id, { label: e.target.value })} placeholder="Label" className="h-10 rounded-full border border-input bg-background px-4 text-sm outline-none focus:border-accent" />
@@ -904,7 +907,7 @@ function AdminDashboard() {
                       </label>
                     </div>
                     <div className="flex-1 grid gap-3 sm:grid-cols-2">
-                      <p className="sm:col-span-2 text-[11px] text-muted-foreground -mt-1">Main image — recommended 1:1 square (800×800 or 1000×1000) on a clean white background.</p>
+                      <p className="sm:col-span-2 text-[11px] text-muted-foreground -mt-1">Main image — recommended optimal dimensions: 1000 x 1000 pixels (1:1 aspect ratio).</p>
                       <input value={row.name} onChange={(e) => update(row.id, { name: e.target.value })} placeholder="Name" className="h-11 rounded-full border border-input bg-background px-4 text-sm outline-none focus:border-accent" />
                       <input value={row.slug} onChange={(e) => update(row.id, { slug: e.target.value })} placeholder="URL slug" className="h-11 rounded-full border border-input bg-background px-4 text-sm outline-none focus:border-accent" />
                       <input value={row.price} onChange={(e) => update(row.id, { price: e.target.value })} placeholder="Price" className="h-11 rounded-full border border-input bg-background px-4 text-sm outline-none focus:border-accent" />
@@ -974,7 +977,7 @@ function AdminDashboard() {
                         />
                       </label>
                     </div>
-                    <p className="text-[11px] text-muted-foreground">Recommended: 1:1 square, 800×800px or 1000×1000px (PNG/JPG, under 500KB) on a clean white background for edge-to-edge fit.</p>
+                    <p className="text-[11px] text-muted-foreground">Recommended optimal dimensions: 1000 x 1000 pixels (1:1 aspect ratio).</p>
                     {(row.images ?? []).length > 0 && (
                       <div className="flex flex-wrap gap-2">
                         {row.images!.map((u) => (
