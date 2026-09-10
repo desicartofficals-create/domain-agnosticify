@@ -58,13 +58,36 @@ function tryStaticFile(urlPath) {
   }
 }
 
-function sendFile(res, filePath, cache) {
+const COMPRESSIBLE = /^(text\/|application\/(javascript|json|xml)|image\/svg)/;
+
+function sendFile(res, req, filePath, cache) {
   const type = mime[extname(filePath).toLowerCase()] || "application/octet-stream";
-  res.writeHead(200, {
+  const headers = {
     "content-type": type,
     "cache-control": cache || "public, max-age=31536000, immutable",
-  });
-  createReadStream(filePath).pipe(res);
+    vary: "Accept-Encoding",
+  };
+
+  const accept = String((req && req.headers && req.headers["accept-encoding"]) || "");
+  const stream = createReadStream(filePath);
+
+  if (COMPRESSIBLE.test(type)) {
+    if (/\bbr\b/.test(accept)) {
+      headers["content-encoding"] = "br";
+      res.writeHead(200, headers);
+      stream.pipe(createBrotliCompress()).pipe(res);
+      return;
+    }
+    if (/\bgzip\b/.test(accept)) {
+      headers["content-encoding"] = "gzip";
+      res.writeHead(200, headers);
+      stream.pipe(createGzip()).pipe(res);
+      return;
+    }
+  }
+
+  res.writeHead(200, headers);
+  stream.pipe(res);
 }
 
 function sendIndex(res) {
