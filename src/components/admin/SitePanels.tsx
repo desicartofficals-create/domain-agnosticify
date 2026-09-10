@@ -211,7 +211,8 @@ export function HeroSlidesPanel() {
       <div className="grid gap-3">
         {rows.map((row) => (
           <div key={row.id} className="rounded-2xl border border-border bg-background p-4 flex flex-col lg:flex-row gap-3">
-            <div className="relative w-full lg:w-64 shrink-0 aspect-[21/9] rounded-xl bg-secondary overflow-hidden flex items-center justify-center border border-border">
+            <div className="w-full lg:w-64 shrink-0 space-y-1">
+            <div className="relative w-full aspect-[21/9] rounded-xl bg-secondary overflow-hidden flex items-center justify-center border border-border">
               {row.image_url ? (
                 <img src={row.image_url} alt="" loading="lazy" className="w-full h-full object-cover" />
               ) : (
@@ -221,6 +222,8 @@ export function HeroSlidesPanel() {
                 <Upload className="h-3.5 w-3.5" /> Upload banner
                 <input type="file" accept="image/*" className="hidden" onChange={(e) => { const f = e.target.files?.[0]; if (f) upload(row, f); e.target.value = ""; }} />
               </label>
+            </div>
+            <p className="text-[10px] leading-tight text-muted-foreground">Recommended optimal dimensions: 1600 x 686 pixels (21:9 aspect ratio) for banners.</p>
             </div>
             <div className="flex-1 grid gap-2 sm:grid-cols-2">
               <input className={input} value={row.title} onChange={(e) => update(row.id, { title: e.target.value })} placeholder="Name / image description" />

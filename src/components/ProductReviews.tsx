@@ -172,6 +172,7 @@ export function ProductReviews({ productSlug }: { productSlug: string }) {
                 onChange={(e) => pickFile(e.target.files?.[0] ?? null)}
               />
             </label>
+            <p className="w-full text-[11px] text-muted-foreground">Recommended optimal dimensions: 1000 x 1000 pixels (1:1 aspect ratio).</p>
             {preview && (
               <div className="relative">
                 <img src={preview} alt="Preview" className="h-14 w-14 rounded-lg object-cover border border-border" />
